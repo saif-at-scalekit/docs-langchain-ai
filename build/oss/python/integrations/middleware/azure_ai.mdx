@@ -1,9 +1,15 @@
 ---
-title: "Microsoft Foundry middleware integration"
-description: "Integrate with the Azure AI middleware using LangChain Python."
+title: Microsoft Foundry middleware integration
+description: Integrate with the Azure AI middleware using LangChain Python.
+integration:
+  name: Microsoft Foundry middleware
+  pypi: langchain-azure-ai
+  featured: true
+  available: Text moderation, image moderation, prompt shield, protected material, and groundedness
+  source: "[`langchain-ai/langchain-azure`](https://github.com/langchain-ai/langchain-azure/tree/main/libs/azure-ai)"
 ---
 
-Middleware specifically designed for Microsoft Foundry and Azure AI Content Safety. Learn more about [middleware](/oss/python/langchain/middleware/overview).
+Middleware specifically designed for Microsoft Foundry and [Azure AI Content Safety](https://learn.microsoft.com/en-us/azure/ai-services/content-safety/overview). Learn more about [middleware](/oss/python/langchain/middleware/overview).
 
 These middleware classes live in the `langchain-azure-ai` package and are exported from `langchain_azure_ai.agents.middleware`.
 
@@ -20,6 +26,7 @@ These middleware classes live in the `langchain-azure-ai` package and are export
 | [Prompt shield](#prompt-shield) | Detect direct and indirect prompt injection attempts |
 | [Protected material](#protected-material) | Detect copyrighted or otherwise protected text or code |
 | [Groundedness](#groundedness) | Evaluate model outputs against grounding sources and flag hallucinations |
+| [Microsoft Foundry memory](#microsoft-foundry-memory) | Extract cross-session memories into a Foundry Memory store and expose a retrieval tool |
 
 ### Features
 
@@ -96,7 +103,7 @@ from langchain.agents import create_agent
 from langchain_azure_ai.agents.middleware import AzureContentModerationMiddleware
 
 agent = create_agent(
-    model="azure_ai:gpt-5.4",
+    model="azure_ai:gpt-6.1-sol",
     middleware=[
         AzureContentModerationMiddleware(
             project_endpoint="https://<resource>.services.ai.azure.com/api/projects/<project>",
@@ -345,6 +352,55 @@ middleware = AzureGroundednessMiddleware(
 
 </Accordion>
 
+## Microsoft Foundry memory
+
+<Info>
+    `AzureAIMemoryMiddleware` is marked experimental. Create the target memory store in your Microsoft Foundry project before using this middleware.
+</Info>
+
+Use `AzureAIMemoryMiddleware` to persist long-term user and conversation memories into a Microsoft Foundry Memory store after agent turns and expose a retrieval tool via `get_retriever_tool()`.
+
+```python
+from azure.identity import DefaultAzureCredential
+from langchain.agents import create_agent
+from langchain.chat_models import init_chat_model
+from langchain_azure_ai.agents.middleware import AzureAIMemoryMiddleware
+
+memory_middleware = AzureAIMemoryMiddleware(
+    project_endpoint="https://<resource>.services.ai.azure.com/api/projects/<project>",
+    credential=DefaultAzureCredential(),
+    store_name="my-memory-store",
+    scope="user:123",
+    roles=["user", "assistant"],
+)
+
+agent = create_agent(
+    model=init_chat_model("azure_ai:gpt-6.1-sol"),
+    tools=[memory_middleware.get_retriever_tool()],
+    middleware=[memory_middleware],
+)
+```
+
+<Accordion title="Configuration options">
+
+<ParamField body="store_name" type="string" required>
+    Name of an existing Microsoft Foundry Memory store in your project.
+</ParamField>
+
+<ParamField body="scope" type="string" required>
+    Memory partition key (for example, a stable user ID) used to isolate stored memories.
+</ParamField>
+
+<ParamField body="update_every_n_turns" type="int" default="1">
+    Number of agent turns to buffer before flushing memories to the store.
+</ParamField>
+
+<ParamField body="roles" type="Sequence[Literal['user', 'assistant']]" default="('user',)">
+    Message roles to extract into long-term memory. Pass `['user', 'assistant']` to remember both turns.
+</ParamField>
+
+</Accordion>
+
 ## API reference
 
 For the full public API, see the middleware exports in [`langchain_azure_ai.agents.middleware`](https://github.com/langchain-ai/langchain-azure/tree/main/libs/azure-ai/langchain_azure_ai/agents/middleware) and the underlying Content Safety middleware package in [`langchain_azure_ai.agents.middleware.content_safety`](https://github.com/langchain-ai/langchain-azure/tree/main/libs/azure-ai/langchain_azure_ai/agents/middleware/content_safety).
@@ -353,7 +409,7 @@ For the full public API, see the middleware exports in [`langchain_azure_ai.agen
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/middleware/azure_ai.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

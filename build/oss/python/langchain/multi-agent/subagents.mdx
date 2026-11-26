@@ -2,7 +2,18 @@
 title: Subagents
 ---
 
-In the **subagents** architecture, a central main [agent](/oss/python/langchain/agents) (often referred to as a **supervisor**) coordinates subagents by calling them as [tools](/oss/python/langchain/tools). The main agent decides which subagent to invoke, what input to provide, and how to combine results. Subagents are stateless—they don't remember past interactions, with all conversation memory maintained by the main agent. This provides [context](/oss/python/langchain/context-engineering) isolation: each subagent invocation works in a clean context window, preventing context bloat in the main conversation.
+import MultiAgentSubagentsPromptPy from '/snippets/python/code-samples/multi-agent-subagents-prompt-py.mdx';
+import MultiAgentSubagentsPromptJs from '/snippets/python/code-samples/multi-agent-subagents-prompt-js.mdx';
+import MultiAgentSubagentsEnumToolPy from '/snippets/python/code-samples/multi-agent-subagents-enum-tool-py.mdx';
+import MultiAgentSubagentsEnumToolJs from '/snippets/python/code-samples/multi-agent-subagents-enum-tool-js.mdx';
+import MultiAgentSubagentsDiscoveryPy from '/snippets/python/code-samples/multi-agent-subagents-discovery-py.mdx';
+import MultiAgentSubagentsDiscoveryJs from '/snippets/python/code-samples/multi-agent-subagents-discovery-js.mdx';
+
+In the **subagents** architecture, a central main [agent](/oss/python/langchain/agents) (often referred to as a **supervisor**) coordinates subagents by calling them as [tools](/oss/python/langchain/tools). The main agent decides which subagent to invoke, what input to provide, and how to combine results. By default, subagents are stateless—they don't remember past interactions, with all conversation memory maintained by the main agent. This provides [context](/oss/python/langchain/context-engineering) isolation: each subagent invocation works in a clean context window, preventing context bloat in the main conversation.
+
+You can also pass the main agent's conversation history into a subagent when it needs that context. See [Subagent inputs](#subagent-inputs).
+
+For built-in subagent support, see [Deep Agents](/oss/python/deepagents/subagents).
 
 ```mermaid
 graph LR
@@ -50,7 +61,7 @@ from langchain.tools import tool
 from langchain.agents import create_agent
 
 # Create a subagent
-subagent = create_agent(model="google_genai:gemini-3.1-pro-preview", tools=[...])
+subagent = create_agent(model="google_genai:gemini-4-hydrogen", tools=[...])
 
 # Wrap it as a tool
 @tool("research", description="Research a topic and return findings")
@@ -59,7 +70,7 @@ def call_research_agent(query: str):
     return result["messages"][-1].content
 
 # Main agent with subagent as a tool
-main_agent = create_agent(model="google_genai:gemini-3.1-pro-preview", tools=[call_research_agent])
+main_agent = create_agent(model="google_genai:gemini-4-hydrogen", tools=[call_research_agent])
 ```
 
 
@@ -270,13 +281,13 @@ from langchain.agents import create_agent
 
 # Sub-agents developed by different teams
 research_agent = create_agent(
-    model="gpt-5.4",
-    prompt="You are a research specialist..."
+    model="gpt-6.1-sol",
+    system_prompt="You are a research specialist..."
 )
 
 writer_agent = create_agent(
-    model="gpt-5.4",
-    prompt="You are a writing specialist..."
+    model="gpt-6.1-sol",
+    system_prompt="You are a writing specialist..."
 )
 
 # Registry of available sub-agents
@@ -306,7 +317,7 @@ def task(
 
 # Main coordinator agent
 main_agent = create_agent(
-    model="gpt-5.4",
+    model="gpt-6.1-sol",
     tools=[task],
     system_prompt=(
         "You coordinate specialized sub-agents. "
@@ -359,20 +370,11 @@ List available agents directly in the main agent's system prompt. The main agent
 - You want the simplest implementation
 
 **Example:**
-```python
-main_agent = create_agent(
-    model="...",
-    tools=[task],
-    system_prompt=(
-        "You coordinate specialized sub-agents. "
-        "Available agents:\n"
-        "- research: Research and fact-finding\n"
-        "- writer: Content creation and editing\n"
-        "- reviewer: Code and document review\n"
-        "Use the task tool to delegate work."
-    ),
-)
-```
+
+<MultiAgentSubagentsPromptPy />
+
+
+
 
 #### Enum constraint on dispatch tool
 
@@ -384,22 +386,11 @@ Add an enum constraint to the `agent_name` parameter in your dispatch tool. This
 - You prefer schema-based validation over prompt-based guidance
 
 **Example:**
-```python
-from enum import Enum
 
-class AgentName(str, Enum):
-    RESEARCH = "research"
-    WRITER = "writer"
-    REVIEWER = "reviewer"
+<MultiAgentSubagentsEnumToolPy />
 
-@tool
-def task(
-    agent_name: AgentName,  # Enum constraint
-    description: str
-) -> str:
-    """Launch an ephemeral subagent for a task."""
-    # ...
-```
+
+
 
 #### Tool-based discovery
 
@@ -412,24 +403,11 @@ Provide a separate tool (e.g., `list_agents` or `search_agents`) that the main a
 - Different teams manage different agents independently
 
 **Example:**
-```python
-@tool
-def list_agents(query: str = "") -> str:
-    """List available subagents, optionally filtered by query."""
-    agents = search_agent_registry(query)
-    return format_agent_list(agents)
 
-@tool
-def task(agent_name: str, description: str) -> str:
-    """Launch an ephemeral subagent for a task."""
-    # ...
+<MultiAgentSubagentsDiscoveryPy />
 
-main_agent = create_agent(
-    model="...",
-    tools=[task, list_agents],
-    system_prompt="Use list_agents to discover available subagents, then use task to invoke them."
-)
-```
+
+
 
 ### Subagent inputs
 
@@ -460,6 +438,15 @@ def call_subagent1(query: str, runtime: ToolRuntime[None, CustomState]):
 ```
 
 
+
+`some_logic` controls how much context the subagent receives. Passing only the task description (`query`) keeps the subagent isolated. Passing the parent's message history (`runtime.state["messages"]`) instead seeds the subagent with prior work, which helps when it needs to continue something the parent already started, like resuming a PR review or picking up a bug fix.
+
+[Deep Agents](/oss/python/deepagents/subagents#forked-subagents) names these patterns `mode: "isolated"` (default) and `mode: "fork"`, and implements forking for you: a forked subagent receives the parent's full message history (including tool calls) and system prompt.
+
+| Mode | Subagent receives | Best for | Tradeoff |
+|------|-------------------|----------|----------|
+| **Isolated** (default) | Only the task description | Focused work that needs little prior context | Context isolation, but re-derives everything the parent already did |
+| **Forked** | The parent's conversation history (and, in Deep Agents, the system prompt) | Continuing a task the parent already started | Seeded with prior context, at the cost of a larger prompt and less isolation |
 
 ### Subagent outputs
 
@@ -506,11 +493,20 @@ By default, subagents use the **inherited checkpointer** mode—each invocation 
 
 Because subagents are called inside tool functions, LangGraph cannot [statically discover](/oss/python/langgraph/use-subgraphs#view-subgraph-state) them. This means [`get_state` with `subgraphs`](/oss/python/langgraph/use-subgraphs#view-subgraph-state) will not return subagent state. If you need to read nested graph state (e.g., during an [interrupt](/oss/python/langgraph/interrupts#pause-using-interrupt)), invoke the subagent from a [node function](/oss/python/langgraph/use-subgraphs#call-a-subgraph-inside-a-node) in a custom graph instead. See [subgraph persistence](/oss/python/langgraph/use-subgraphs#subgraph-persistence) for details on how each mode affects state visibility.
 
+<Card
+    title="Migrate from langgraph-supervisor"
+    icon="arrow-right"
+    href="/oss/python/migrate/langgraph-supervisor"
+    arrow cta="View guide"
+>
+    The langgraph-supervisor package is no longer actively maintained. Learn how to migrate from create_supervisor to the subagents pattern, including interrupt and resume flows with external API callbacks.
+</Card>
+
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/subagents.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

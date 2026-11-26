@@ -3,8 +3,8 @@ title: Build customer support with handoffs
 sidebarTitle: "Handoffs: Customer support"
 ---
 
-import ChatModelTabsPy from '/snippets/chat-model-tabs.mdx';
-import ChatModelTabsJs from '/snippets/chat-model-tabs-js.mdx';
+import ChatModelTabsPy from '/snippets/javascript/chat-model-tabs.mdx';
+import ChatModelTabsJs from '/snippets/javascript/chat-model-tabs-js.mdx';
 
 The [state machine pattern](/oss/javascript/langchain/multi-agent/handoffs) describes workflows where an agent's behavior changes as it moves through different states of a task. This tutorial shows how to implement a state machine by using tool calls to dynamically change a single agent's configuration—updating its available tools and instructions based on the current state. The state can be determined from multiple sources: the agent's past actions (tool calls), external state (such as API call results), or even initial user input (for example, by running a classifier to determine user intent).
 
@@ -84,11 +84,11 @@ Set up [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&ut
 
 
 <CodeGroup>
-```bash bash
+```bash Shell
 export LANGSMITH_TRACING="true"
 export LANGSMITH_API_KEY="..."
 ```
-```typescript typescript
+```typescript TypeScript
 process.env.LANGSMITH_TRACING = "true";
 process.env.LANGSMITH_API_KEY = "...";
 ```
@@ -646,10 +646,10 @@ Here's everything together in a runnable script:
 import { createMiddleware, createAgent } from "langchain";
 
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
 import { tool, ToolMessage, type ToolRuntime, HumanMessage } from "langchain";
 import { Command, MemorySaver, StateSchema } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
+import { uuid7 } from "langsmith";
 
 // Define the possible workflow steps
 const SupportStepSchema = z.enum([
@@ -857,7 +857,7 @@ const agent = createAgent({
 });
 
 // Configuration for this conversation thread
-const threadId = uuidv4();
+const threadId = uuid7();
 const config = { configurable: { thread_id: threadId } };
 
 // Turn 1: Initial message - starts with warranty_collector step
@@ -920,7 +920,7 @@ for (const msg of result.messages) {
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/handoffs-customer-support.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

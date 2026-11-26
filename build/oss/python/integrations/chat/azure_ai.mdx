@@ -1,19 +1,33 @@
 ---
-title: "AzureAIOpenAIApiChatModel integration"
-description: "Integrate with the AzureAIOpenAIApiChatModel chat model using LangChain Python."
+title: Microsoft Foundry Chat Models integration
+sidebarTitle: Foundry chat
+description: Integrate with the AzureAIOpenAIApiChatModel chat model using LangChain
+  Python.
+integration:
+  name: AzureAIOpenAIApiChatModel
+  pypi: langchain-azure-ai
+  stream: true
+  tool_calling: true
+  structured_output: true
+  multimodal: true
 ---
 
 This will help you get started with `AzureAIOpenAIApiChatModel` [chat models](/oss/python/langchain/models).
 
 The `AzureAIOpenAIApiChatModel` class uses the OpenAI-compatible API available in Azure AI Foundry. AI Foundry has several chat models, including AzureOpenAI, Cohere, Llama, Phi-3/4, and DeepSeek-R1, among others. You can find information about their latest models and their costs, context windows, and supported input types in the [Azure docs](https://learn.microsoft.com/azure/ai-studio/how-to/model-catalog-overview).
 
+Microsoft Foundry provides project-level access to models and Azure services. Use `AzureAIOpenAIApiChatModel` from `langchain-azure-ai` when your application uses a Foundry project, Azure credentials, or other Foundry capabilities.
+
 ## Overview
 
 ### Integration details
 
-| Class | Package | Serializable | [JS support](https://reference.langchain.com/javascript/langchain-openai/AzureChatOpenAI) | Downloads | Version |
+| Class | Package | Serializable | JS support | Downloads | Version |
 | :--- | :--- | :---: |  :---: | :---: | :---: |
-| `AzureAIOpenAIApiChatModel` | `langchain-azure-ai` | ✅ | ✅ | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-azure-ai?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-azure-ai?style=flat-square&label=%20) |
+| `ChatOpenAI`    | `langchain-openai` | ✅ | ✅ | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-openai?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-openai?style=flat-square&label=%20) |
+| `ChatAnthropic` | `langchain-anthropic` | ✅ | ✅ | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-anthropic?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-anthropic?style=flat-square&label=%20) |
+| `AzureAIOpenAIApiChatModel` | `langchain-azure-ai` | ✅ | ❌ | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-azure-ai?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-azure-ai?style=flat-square&label=%20) |
+| `AzureAIAnthropicChatModel` | `langchain-azure-ai` | ✅ | ❌ | ![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-azure-ai?style=flat-square&label=%20) | ![PyPI - Version](https://img.shields.io/pypi/v/langchain-azure-ai?style=flat-square&label=%20) |
 
 ### Model features
 
@@ -29,17 +43,26 @@ To access `AzureAIOpenAIApiChatModel` models, you'll need to create an [Azure ac
 
 Head to the [Azure docs](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/develop/sdk-overview?tabs=sync&pivots=programming-language-python) to see how to create your deployment and generate an API key. Once your model is deployed, you click the 'get endpoint' button in AI Foundry. This will show you your endpoint and api key. Once you've done this, set the environment variables:
 
-```python
-import getpass
-import os
+<Tabs>
+    <Tab title="Shell">
+        ```bash
+        export AZURE_AI_PROJECT_ENDPOINT="https://<resource>.services.ai.azure.com/api/projects/<project>"
+        ```
+    </Tab>
+    <Tab title="Python">
+        ```python
+        import getpass
+        import os
 
-if not os.getenv("AZURE_AI_PROJECT_ENDPOINT"):
-    os.environ["AZURE_AI_PROJECT_ENDPOINT"] = getpass.getpass(
-        "Enter your Azure AI project endpoint: "
-    )
-```
+        if not os.getenv("AZURE_AI_PROJECT_ENDPOINT"):
+            os.environ["AZURE_AI_PROJECT_ENDPOINT"] = getpass.getpass(
+                "Enter your Azure AI project endpoint: "
+            )
+        ```
+    </Tab>
+</Tabs>
 
-If you want to get automated tracing of your model calls, you can also set your [LangSmith](/langsmith/home) API key by uncommenting below:
+If you want to get automated tracing of your model calls, you can also set your [LangSmith](/langsmith/observability) API key:
 
 ```python
 os.environ["LANGSMITH_TRACING"] = "true"
@@ -50,26 +73,47 @@ os.environ["LANGSMITH_API_KEY"] = getpass.getpass("Enter your LangSmith API key:
 
 The LangChain `AzureAIOpenAIApiChatModel` integration lives in the `langchain-azure-ai` package:
 
-```python
-pip install -qU langchain-azure-ai
-```
+<CodeGroup>
+    ```bash pip
+    pip install -qU langchain-azure-ai
+    ```
+
+    ```bash uv
+    uv add langchain-azure-ai
+    ```
+</CodeGroup>
 
 ## Instantiation
 
 Now we can instantiate our model object and generate chat completions:
 
-```python
-from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
-from azure.identity import DefaultAzureCredential
+<Tabs>
+    <Tab title="Project quickstart">
+        ```python
+        from azure.identity import DefaultAzureCredential
+        from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 
-llm = AzureAIOpenAIApiChatModel(
-    model="gpt-4o",
-    credential=DefaultAzureCredential(),
-    temperature=0,
-    max_tokens=None,
-    max_retries=2,
-)
-```
+        llm = AzureAIOpenAIApiChatModel(
+            model="gpt-6.1-sol",  # your Foundry model deployment name
+            credential=DefaultAzureCredential(),
+        )
+        ```
+    </Tab>
+    <Tab title="Model parameters">
+        ```python
+        from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
+        from azure.identity import DefaultAzureCredential
+
+        llm = AzureAIOpenAIApiChatModel(
+            model="gpt-4o",
+            credential=DefaultAzureCredential(),
+            temperature=0,
+            max_tokens=None,
+            max_retries=2,
+        )
+        ```
+    </Tab>
+</Tabs>
 
 ## Invocation
 
@@ -97,11 +141,46 @@ print(ai_msg.content)
 J'adore programmer.
 ```
 
+## Anthropic Claude models
+
+Use `AzureAIAnthropicChatModel` to call Claude models deployed in Microsoft Foundry through the `/anthropic` endpoint with Microsoft Entra ID or API key authentication.
+
+<Tabs>
+    <Tab title="Project endpoint">
+        ```python
+        from azure.identity import DefaultAzureCredential
+        from langchain_azure_ai.chat_models import AzureAIAnthropicChatModel
+
+        claude = AzureAIAnthropicChatModel(
+            project_endpoint="https://<resource>.services.ai.azure.com/api/projects/<project>",
+            credential=DefaultAzureCredential(),
+            model="claude-sonnet-4-5",  # your Claude deployment name
+        )
+        claude.invoke("Translate 'hi!' from English into Italian.").pretty_print()
+        ```
+    </Tab>
+    <Tab title="Resource endpoint">
+        ```python
+        from azure.identity import DefaultAzureCredential
+        from langchain_azure_ai.chat_models import AzureAIAnthropicChatModel
+
+        claude = AzureAIAnthropicChatModel(
+            endpoint="https://<resource>.services.ai.azure.com",
+            credential=DefaultAzureCredential(),
+            model="claude-sonnet-4-5",  # your Claude deployment name
+        )
+        claude.invoke("Translate 'hi!' from English into Italian.").pretty_print()
+        ```
+    </Tab>
+</Tabs>
+
+When both `project_endpoint` and `endpoint` are omitted, `AzureAIAnthropicChatModel` resolves `AZURE_AI_PROJECT_ENDPOINT`, then `FOUNDRY_PROJECT_ENDPOINT`, as the project endpoint. If neither is set, it falls back to `ANTHROPIC_FOUNDRY_RESOURCE` as the resource endpoint (a bare resource name or a full URL).
+
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/chat/azure_ai.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

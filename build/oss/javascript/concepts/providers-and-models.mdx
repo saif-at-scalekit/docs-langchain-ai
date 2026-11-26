@@ -45,9 +45,9 @@ Every LangChain chat model, regardless of provider, implements the same interfac
 ```typescript
 import { initChatModel } from "langchain/chat_models/universal";
 
-const openaiModel = await initChatModel("openai:gpt-5.4");
-const anthropicModel = await initChatModel("anthropic:claude-opus-4-6");
-const googleModel = await initChatModel("google-genai:gemini-3.1-pro-preview");
+const openaiModel = await initChatModel("openai:gpt-6.1-sol");
+const anthropicModel = await initChatModel("anthropic:claude-opus-4-8");
+const googleModel = await initChatModel("google:gemini-3.1-pro-preview");
 
 for (const model of [openaiModel, anthropicModel, googleModel]) {
     const response = await model.invoke("Explain quantum computing in one sentence.");
@@ -71,7 +71,7 @@ In LangChain, each provider has a dedicated **integration package** (for example
 ```bash
 npm install @langchain/openai       # For OpenAI models
 npm install @langchain/anthropic    # For Anthropic models
-npm install @langchain/google-genai # For Google models
+npm install @langchain/google       # For Google models
 ```
 
 
@@ -87,18 +87,18 @@ Each provider supports specific model names that you pass when initializing a ch
     ```typescript Provider prefix format
     import { initChatModel } from "langchain/chat_models/universal";
 
-    const model = await initChatModel("openai:gpt-5.4");
+    const model = await initChatModel("openai:gpt-6.1-sol");
     ```
 
     ```typescript Direct class instantiation
     import { ChatOpenAI } from "@langchain/openai";
 
-    const model = new ChatOpenAI({ model: "gpt-5.4" });
+    const model = new ChatOpenAI({ model: "gpt-6.1-sol" });
     ```
     </CodeGroup>
 
 
-When using [`init_chat_model`](https://reference.langchain.com/javascript/langchain/chat_models/universal/initChatModel) with the `provider:model` format, LangChain automatically resolves the provider and loads the correct integration package. You can also omit the provider prefix if the model name is unambiguous (e.g., `"gpt-5.4"` resolves to OpenAI).
+When using [`init_chat_model`](https://reference.langchain.com/javascript/langchain/chat_models/universal/initChatModel) with the `provider:model` format, LangChain automatically resolves the provider and loads the correct integration package. You can also omit the provider prefix if the model name is unambiguous (e.g., `"gpt-6.1-sol"` resolves to OpenAI).
 
 To find available model names for a provider, refer to the provider's own documentation. Here are some popular providers:
 
@@ -117,7 +117,7 @@ Because LangChain provider packages pass model names directly to the provider's 
 
 
 ```typescript
-const model = await initChatModel("google_genai:gemini-mythos");
+const model = await initChatModel("google:gemini-mythos");
 ```
 
 
@@ -195,7 +195,7 @@ const model = new ChatOpenAI({
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/concepts/providers-and-models.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

@@ -1,20 +1,30 @@
 ---
-title: "Azure AI search integration"
-description: "Integrate with the Azure AI search vector store using LangChain Python."
+title: "Azure AI Search integration"
+description: "Integrate with the Azure AI Search vector store using LangChain Python."
+integration:
+  name: AzureSearch
+  pypi: langchain-azure-ai
+  delete_by_id: true
+  filtering: true
+  search_with_score: true
+  async_api: true
 ---
 
 [Azure AI Search](https://learn.microsoft.com/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` and `Azure Cognitive Search`) is a cloud search service that gives developers infrastructure, APIs, and tools for information retrieval of vector, keyword, and hybrid queries at scale.
 
-You'll need to install `langchain-community` with `pip install -qU langchain-community` to use this integration
+The `AzureSearch` vector store ships in the [`langchain-azure-ai`](https://pypi.org/project/langchain-azure-ai/) package, which installs the Azure AI Search SDK (`azure-search-documents`) and `azure-identity` as dependencies.
 
-## Install Azure AI search SDK
+## Install the package
 
-Use azure-search-documents package version 11.4.0 or later.
+<CodeGroup>
+    ```bash pip
+    pip install -qU langchain-azure-ai
+    ```
 
-```python
-pip install -qU  azure-search-documents
-pip install -qU  azure-identity
-```
+    ```bash uv
+    uv add langchain-azure-ai
+    ```
+</CodeGroup>
 
 ## Import required libraries
 
@@ -23,7 +33,7 @@ pip install -qU  azure-identity
 ```python
 import os
 
-from langchain_community.vectorstores.azuresearch import AzureSearch
+from langchain_azure_ai.vectorstores import AzureSearch
 from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 ```
 
@@ -35,7 +45,7 @@ Set variables for your OpenAI provider. You need either an [OpenAI account](http
 # Option 1: use an OpenAI account
 openai_api_key: str = "PLACEHOLDER FOR YOUR API KEY"
 openai_api_version: str = "2023-05-15"
-model: str = "text-embedding-ada-002"
+model: str = "text-embedding-3-small"
 ```
 
 ```python
@@ -43,7 +53,7 @@ model: str = "text-embedding-ada-002"
 azure_endpoint: str = "PLACEHOLDER FOR YOUR AZURE OPENAI ENDPOINT"
 azure_openai_api_key: str = "PLACEHOLDER FOR YOUR AZURE OPENAI KEY"
 azure_openai_api_version: str = "2023-05-15"
-azure_deployment: str = "text-embedding-ada-002"
+azure_deployment: str = "text-embedding-3-small"
 ```
 
 ## Configure vector store settings
@@ -109,14 +119,13 @@ vector_store: AzureSearch = AzureSearch(
 This step loads, chunks, and vectorizes the sample document, and then indexes the content into a search index on Azure AI Search.
 
 ```python
-from langchain_community.document_loaders import TextLoader
+from pathlib import Path
+
 from langchain_text_splitters import CharacterTextSplitter
 
-loader = TextLoader("../../how_to/state_of_the_union.txt", encoding="utf-8")
-
-documents = loader.load()
+text = Path("state_of_the_union.txt").read_text(encoding="utf-8")
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-docs = text_splitter.split_documents(documents)
+docs = text_splitter.create_documents([text])
 
 vector_store.add_documents(documents=docs)
 ```
@@ -192,7 +201,7 @@ And I did that 4 days ago, when I nominated Circuit Court of Appeals Judge Ketan
 
 ## Perform a vector similarity search with relevance scores
 
-Execute a pure vector similarity search using the similarity_search_with_relevance_scores() method. Queries that don't meet the threshold requirements are exluded.
+Execute a pure vector similarity search using the similarity_search_with_relevance_scores() method. Queries that don't meet the threshold requirements are excluded.
 
 ```python
 docs_and_scores = vector_store.similarity_search_with_relevance_scores(
@@ -381,6 +390,10 @@ res
  Document(page_content='Test 2', metadata={'title': 'Title 2', 'source': 'A', 'random': '48392'})]
 ```
 
+<Warning>
+Pass a filter as `filters`, an OData expression, as in this example. That form works in every released version. In `langchain-azure-ai` 1.3.0 and earlier, a `filter` key in a retriever's `search_kwargs` is not applied: `similarity` and `similarity_score_threshold` searches return unfiltered results, and the other search types raise a `TypeError`. `langchain-azure-ai` 1.3.1 and later accept `filter` as well. With `as_retriever`, use `search_kwargs={"filters": "source eq 'A'"}` unless you require 1.3.1 or later. If a filter separates tenants or permissions, check that it is applied before you rely on it.
+</Warning>
+
 ### Create a new index with a scoring profile
 
 Here's another custom schema that includes a scoring profile definition. A scoring profile is used for relevance tuning of nonvector content, which is helpful in hybrid search scenarios.
@@ -518,21 +531,21 @@ vector_store.add_texts(
 ```
 
 ```python
-res = vector_store.similarity_search(query="Test 1", k=3, search_type="similarity")
+# Hybrid search applies the scoring profile to the text half of the query.
+# Fresher `last_update` values rank higher within the boosting duration.
+res = vector_store.similarity_search(query="Test 1", k=3, search_type="hybrid")
 res
 ```
 
-```python
-[Document(page_content='Test 1', metadata={'title': 'Title 1', 'source': 'source1', 'random': '32893', 'last_update': '2024-01-24T22:18:51-00:00'}),
- Document(page_content='Test 1', metadata={'title': 'Title 1', 'source': 'source1', 'random': '48392', 'last_update': '2024-02-22T22:18:51-00:00'}),
- Document(page_content='Test 1', metadata={'title': 'Title 1', 'source': 'source1', 'random': '10290', 'last_update': '2024-02-23T22:18:51-00:00'})]
-```
+## API reference
+
+For all `AzureSearch` features and configurations, see the [`langchain-azure-ai` API reference](https://reference.langchain.com/python/langchain-azure-ai).
 
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/vectorstores/azuresearch.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

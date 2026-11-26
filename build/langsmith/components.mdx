@@ -1,15 +1,19 @@
 ---
-title: LangSmith Deployment components
+title: LangSmith Agent Server components
 sidebarTitle: Overview
 mode: wide
 description: Overview of Agent Server, LangGraph CLI, Studio, SDKs, RemoteGraph, control plane, and data plane components.
 ---
 
-When running self-hosted [LangSmith Deployment](/langsmith/deploy-self-hosted-full-platform), your installation includes several key components. Together these tools and services provide a complete solution for building, deploying, and managing graphs (including agentic applications) in your own infrastructure:
+import AgentServerRenameNote from '/snippets/python/langsmith/agent-server-rename-note.mdx';
+
+[LangSmith Agent Server](/langsmith/agent-server) and its hosting infrastructure include the following components. Together these tools and services provide a complete solution for building, deploying, and managing graphs (including agentic applications), whether on [Cloud](/langsmith/cloud) or in your own [self-hosted](/langsmith/self-hosted) infrastructure:
+
+<AgentServerRenameNote />
 
 ```mermaid
 flowchart
-    subgraph LangSmith Deployment
+    subgraph LangSmith Agent Server
         A[LangGraph CLI] -->|creates| B(Agent Server deployment)
         B <--> D[Studio]
         B <--> E[SDKs]
@@ -27,13 +31,13 @@ flowchart
 - [Python/JS SDK](/langsmith/reference): The Python/JS SDK provides a programmatic way to interact with deployed graphs and agents from your applications.
 - [RemoteGraph](/langsmith/use-remote-graph): Allows you to interact with a deployed graph as though it were running locally.
 - [Control Plane](/langsmith/control-plane): The UI and APIs for creating, updating, and managing Agent Server deployments.
-- [Data plane](/langsmith/data-plane): The runtime layer that executes your graphs, including Agent Servers, their backing services (PostgreSQL, Redis, etc.), and the listener that reconciles state from the control plane.
+- [Data Plane](/langsmith/data-plane): The runtime layer that executes your graphs, including Agent Servers, their backing services (PostgreSQL, Redis, etc.), and the listener that reconciles state from the control plane.
 
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/components.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

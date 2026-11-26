@@ -1,7 +1,11 @@
 ---
-title: "Azure OpenAI integration"
-description: "Integrate with the Azure OpenAI LLM using LangChain Python."
+title: Azure OpenAI integration
+description: Integrate with the Azure OpenAI LLM using LangChain Python.
+integration:
+  name: Azure OpenAI
+  pypi: langchain-openai
 ---
+
 
 <Warning>
 **You are currently on a page documenting the use of Azure OpenAI text completion models. The latest and most popular Azure OpenAI models are [chat completion models](/oss/python/langchain/models).**
@@ -74,6 +78,44 @@ credential = ChainedTokenCredential(
 )
 ```
 
+### Configure authentication per client
+
+<Tabs>
+    <Tab title="Entra ID (recommended)">
+        ```python
+        from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+        from langchain_openai import AzureOpenAI
+
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(),
+            "https://cognitiveservices.azure.com/.default",
+        )
+
+        llm = AzureOpenAI(
+            azure_deployment="gpt-6.1-sol",  # your Azure deployment name
+            api_version="2025-04-01-preview",
+            azure_ad_token_provider=token_provider,
+        )
+
+        print(llm.invoke("Write a haiku about the ocean."))
+        ```
+    </Tab>
+    <Tab title="API key">
+        ```python
+        from langchain_openai import AzureOpenAI
+
+        llm = AzureOpenAI(
+            azure_deployment="gpt-6.1-sol",  # your Azure deployment name
+            api_version="2025-04-01-preview",
+            azure_endpoint="https://YOUR-RESOURCE-NAME.openai.azure.com/",
+            api_key="your-azure-api-key",
+        )
+
+        print(llm.invoke("Write a haiku about the ocean."))
+        ```
+    </Tab>
+</Tabs>
+
 ## Deployments
 
 With Azure OpenAI, you set up your own deployments of the common GPT-3 and Codex models.  When calling the API, you need to specify the deployment you want to use.
@@ -95,9 +137,15 @@ response = client.completions.create(
 )
 ```
 
-```python
-pip install -qU  langchain-openai
-```
+<CodeGroup>
+    ```bash pip
+    pip install -qU langchain-openai
+    ```
+
+    ```bash uv
+    uv add langchain-openai
+    ```
+</CodeGroup>
 
 ```python
 import os
@@ -148,7 +196,7 @@ Params: {'deployment_name': 'gpt-35-turbo-instruct-0914', 'model_name': 'gpt-3.5
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/llms/azure_openai.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

@@ -54,7 +54,7 @@ The core insight is that you can call a LangChain agent directly inside any Lang
 from langchain.agents import create_agent
 from langgraph.graph import StateGraph, START, END
 
-agent = create_agent(model="openai:gpt-5.4", tools=[...])
+agent = create_agent(model="openai:gpt-6.1-sol", tools=[...])
 
 def agent_node(state: State) -> dict:
     """A LangGraph node that invokes a LangChain agent."""
@@ -77,7 +77,7 @@ workflow = (
 
 ## Example: RAG pipeline
 
-A common use case is combining [retrieval](/oss/python/langchain/retrieval) with an agent. This example builds a WNBA stats assistant that retrieves from a knowledge base and can fetch live news.
+A common use case is combining [retrieval](/oss/python/deepagents/retrieval) with an agent. This example builds a WNBA stats assistant that retrieves from a knowledge base and can fetch live news.
 
 <Accordion title="Custom RAG workflow">
 
@@ -146,11 +146,11 @@ def get_latest_news(query: str) -> str:
     return "Latest: The WNBA announced expanded playoff format for 2025..."
 
 agent = create_agent(
-    model="openai:gpt-5.4",
+    model="openai:gpt-6.1-sol",
     tools=[get_latest_news],
 )
 
-model = ChatOpenAI(model="gpt-5.4")
+model = ChatOpenAI(model="gpt-6.1-sol")
 
 class RewrittenQuery(BaseModel):
     query: str
@@ -194,6 +194,10 @@ result = workflow.invoke({"question": "Who won the 2024 WNBA Championship?"})
 print(result["answer"])
 ```
 
+<Info>
+In production, use a persistent vector store such as [Valkey](/oss/python/integrations/vectorstores/valkey), [Databricks Vector Search](/oss/python/integrations/vectorstores/databricks_vector_search), or [MongoDB Atlas](/oss/python/integrations/vectorstores/mongodb_atlas) instead of `InMemoryVectorStore`. See [all vector stores](/oss/python/integrations/vectorstores).
+</Info>
+
 
 
 </Accordion>
@@ -202,7 +206,7 @@ print(result["answer"])
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/multi-agent/custom-workflow.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

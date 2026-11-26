@@ -7,7 +7,7 @@ description: "Integrate with Perplexity using LangChain Python."
 > the internet with unlimited Pro Search, upgraded AI models, unlimited file upload,
 > image generation, and API credits.
 >
-> You can check a [list of available models](https://docs.perplexity.ai/docs/model-cards).
+> You can check a [list of available models](https://docs.perplexity.ai/getting-started/models).
 
 ## Installation and setup
 
@@ -32,6 +32,8 @@ See a variety of [Perplexity usage examples](/oss/python/integrations/chat/perpl
 ```python
 from langchain_perplexity import ChatPerplexity
 ```
+
+`ChatPerplexity` can also target the [Perplexity Agent API](https://docs.perplexity.ai/api-reference/agent-api) by passing `use_responses_api=True` (or by passing `tools=[{"type": "web_search"}]`, which auto-enables it). See [Agent API support](/oss/python/integrations/chat/perplexity#agent-api-support-use_responses_api) on the chat page for details and examples.
 
 ## Retriever
 
@@ -67,15 +69,15 @@ See a [usage example](/oss/python/integrations/embeddings/perplexity).
 from langchain_perplexity import PerplexityEmbeddings
 ```
 
-## Deep Agents CLI
+## Deep Agents Code
 
-Use Perplexity as a first-class provider in the [Deep Agents CLI](/oss/python/deepagents/cli/providers).
+Use Perplexity as a first-class provider in [Deep Agents Code](/oss/deepagents/code/providers).
 
-Install the CLI with the Perplexity extra:
+Install Deep Agents Code with the Perplexity extra:
 
 <CodeGroup>
 ```bash uv
-uv tool install 'deepagents-cli[perplexity]'
+uv tool install 'deepagents-code[perplexity]'
 ```
 </CodeGroup>
 
@@ -94,7 +96,7 @@ Then set `PERPLEXITY_API_KEY` and reference Perplexity models with the `perplexi
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/providers/perplexity.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

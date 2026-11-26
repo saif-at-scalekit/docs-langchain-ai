@@ -1,7 +1,11 @@
 ---
-title: "Decodo integration"
-description: "Integrate with the Decodo tool using LangChain JavaScript."
+title: Decodo integration
+description: Integrate with the Decodo tool using LangChain JavaScript.
+integration:
+  name: Decodo
+  npm: '@decodo/langchain-ts'
 ---
+
 
 The [@decodo/langchain-ts](https://www.npmjs.com/package/@decodo/langchain-ts) package enables developers to use Decodo's Web Scraper API alongside their LangChain applications.
 
@@ -41,7 +45,7 @@ A set of agentic examples for each tool.
 ```typescript
 import dotenv from "dotenv";
 import { ChatOpenAI } from "@langchain/openai";
-import { createAgent } from "@langchain/agents";
+import { createAgent } from "langchain";
 import { DecodoUniversalTool } from "@decodo/langchain-ts";
 
 dotenv.config();
@@ -57,7 +61,7 @@ const main = async () => {
   });
 
   const agent = createAgent({
-    llm: model,
+    model,
     tools: [decodoUniversalTool],
   });
 
@@ -98,7 +102,7 @@ const main = async () => {
   });
 
   const agent = createAgent({
-    llm: model,
+    model,
     tools: [decodoGoogleSearchTool],
   });
 
@@ -135,7 +139,7 @@ const main = async () => {
   });
 
   const agent = createAgent({
-    llm: model,
+    model,
     tools: [decodoAmazonSearchTool],
   });
 
@@ -182,7 +186,7 @@ For support, please visit [Decodo's documentation](https://help.decodo.com/) or 
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/javascript/integrations/tools/decodo.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

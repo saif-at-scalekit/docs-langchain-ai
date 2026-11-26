@@ -43,7 +43,7 @@ This difference in targets determines what you can evaluate: offline evaluations
 
 ## Evaluation lifecycle
 
-As you develop and [deploy your application](/langsmith/deployment), your evaluation strategy evolves from pre-deployment testing to production monitoring. During development and testing, offline evaluations validate functionality against curated datasets. After deployment, online evaluations monitor production behavior on live traffic. As applications mature, both evaluation types work together in an iterative feedback loop to improve quality continuously.
+As you develop and [deploy your application](/langsmith/deploy-overview), your evaluation strategy evolves from pre-deployment testing to production monitoring. During development and testing, offline evaluations validate functionality against curated datasets. After deployment, online evaluations monitor production behavior on live traffic. As applications mature, both evaluation types work together in an iterative feedback loop to improve quality continuously.
 
 ```mermaid
 graph LR
@@ -145,7 +145,7 @@ Online evaluations run on runs and threads from production traffic. Without refe
 
 #### Runs
 
-A _run_ is a single execution trace from your [deployed application](/langsmith/deployment). Each run contains:
+A _run_ is a single execution trace from your [deployed application](/langsmith/deploy-overview). Each run contains:
 - **Inputs**: The actual user inputs your application received.
 - **Outputs**: What your application actually returned.
 - **Intermediate steps**: All the child runs (tool calls, LLM calls, and so on).
@@ -165,10 +165,14 @@ _Evaluators_ are workspace-level resources that score application performance. T
 
 Run evaluators using any of the following:
 
-- The [Evaluators](/langsmith/evaluators) page, to attach them to tracing projects or datasets
+- The [Evaluators](/langsmith/evaluators) page, to attach them to agent environments or datasets
 - The [Playground](/langsmith/prompt-engineering-concepts#playground)
-- The LangSmith SDK ([Python](https://docs.smith.langchain.com/reference/python/reference) and [TypeScript](https://docs.smith.langchain.com/reference/js))
-- [Rules](/langsmith/rules), to run them automatically on tracing projects or datasets
+- The LangSmith SDK ([Python](https://reference.langchain.com/python/langsmith) and [TypeScript](https://reference.langchain.com/javascript/langsmith))
+- [Rules](/langsmith/rules), to run them automatically on agent environments or datasets
+
+### Attaching an evaluator to a tracing project or dataset
+
+A single evaluator can be attached to many agent environments and datasets. Configuration like sampling rate, filters, and [spend limits](/langsmith/evaluator-spend) is set per attached environment or dataset, not per evaluator. View an evaluator's attachments under its **Environments & Datasets** tab.
 
 ### Evaluator inputs
 
@@ -196,6 +200,7 @@ LangSmith supports several evaluation approaches:
 - [Human](#human)
 - [Code](#code)
 - [LLM-as-judge](#llm-as-judge)
+- [Decision model](#decision-model)
 - [Pairwise](#pairwise)
 
 #### Human
@@ -208,7 +213,7 @@ _Human evaluation_ involves manual review of application outputs and execution t
 
 LangSmith supports two queue types:
 
-- **Single-run queues**: Review one run at a time against custom rubric items. Useful for triaging issues or building datasets from production traces.
+- **Single-run queues**: Review one run at a time against custom rubric items. Useful for triaging issues or building datasets from production traces. Single-run queues also support [assertions](/langsmith/assertions), free-form acceptance criteria that an offline evaluator can grade future runs against.
 - **Pairwise queues**: Compare two runs side-by-side to judge which is better. Designed for fast A/B comparisons between experiments.
 
 Key features include configuring multiple reviewers per run, enabling reservations to prevent conflicts, and exporting annotated runs directly to datasets for future evaluations.
@@ -227,6 +232,12 @@ _LLM-as-judge evaluators_ use LLMs to score application outputs. The grading rul
 LLM-as-judge evaluators require careful review of scores and prompt tuning. Few-shot evaluators, which include examples of inputs, outputs, and expected grades in the grader prompt, often improve performance.
 
 Learn about [how to define an LLM-as-a-judge evaluator](/langsmith/llm-as-judge).
+
+#### Decision model
+
+_Decision model evaluators_ use a decision model, such as Jev, as the judge. Instead of a prompt and an output schema, you define typed questions: a probability that a statement is true, a choice from a fixed list, or a score along ordered levels. Each question's answer becomes its own piece of feedback.
+
+Learn about [how to define a decision model evaluator](/langsmith/decision-model-evaluator).
 
 #### Pairwise
 
@@ -345,7 +356,7 @@ The following table summarizes the key differences between offline and online ev
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/evaluation-concepts.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

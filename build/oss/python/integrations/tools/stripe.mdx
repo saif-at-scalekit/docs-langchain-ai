@@ -1,7 +1,14 @@
 ---
-title: "StripeAgentToolkit integration"
-description: "Integrate with the StripeAgentToolkit tool using LangChain Python."
+title: StripeAgentToolkit integration
+description: Integrate with the StripeAgentToolkit tool using LangChain Python.
+integration:
+  name: StripeAgentToolkit
+  pypi: stripe-agent-toolkit
 ---
+
+<Warning>
+`stripe-agent-toolkit` is deprecated. Stripe recommends the hosted [Stripe MCP server](https://docs.stripe.com/mcp) instead. See Stripe's [deprecation notice](https://github.com/stripe/ai).
+</Warning>
 
 This guide provides a quick overview for getting started with Stripe's agent toolkit.
 
@@ -24,6 +31,10 @@ You can install it, along with langgraph for the following examples, with `pip`:
 ```python
 pip install --quiet -U langgraph stripe-agent-toolkit
 ```
+
+<Note>
+If you still need this package, pin `mcp<2`. `stripe-agent-toolkit` 0.7.1 allows any `mcp>=1.0`, and mcp 2.x removed `streamablehttp_client`, which causes an `ImportError` on a fresh install.
+</Note>
 
 ### Credentials
 
@@ -73,7 +84,7 @@ from langchain.agents import create_agent
 
 
 model = ChatAnthropic(
-    model="claude-3-5-sonnet-20240620",
+    model="claude-sonnet-4-6",
 )
 
 langgraph_agent_executor = create_agent(model, stripe_agent_toolkit.get_tools())
@@ -95,7 +106,7 @@ print(output_state["messages"][-1].content)
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/tools/stripe.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

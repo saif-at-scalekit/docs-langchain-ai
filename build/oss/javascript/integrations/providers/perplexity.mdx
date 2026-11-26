@@ -37,6 +37,8 @@ See a [usage example](/oss/javascript/integrations/chat/perplexity).
 import { ChatPerplexity } from "@langchain/perplexity";
 ```
 
+`ChatPerplexity` can also target the [Perplexity Agent API](https://docs.perplexity.ai/api-reference/agent-api) by passing `useResponsesApi: true` (or by passing `tools: [{ type: "web_search" }]`, which auto-enables it). See [Agent API support](/oss/javascript/integrations/chat/perplexity#agent-api-support-useresponsesapi) on the chat page for details and examples.
+
 ## Retriever
 
 You can use the [`PerplexitySearchRetriever`](/oss/javascript/integrations/retrievers/perplexity_search) to fetch web search results from the [Perplexity Search API](https://docs.perplexity.ai/docs/search/quickstart) as `Document` objects in a standard retrieval pipeline.
@@ -73,7 +75,7 @@ import { PerplexitySearchResults } from "@langchain/perplexity";
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/javascript/integrations/providers/perplexity.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

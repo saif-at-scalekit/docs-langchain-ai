@@ -19,11 +19,11 @@ For a short summary of which graph topology and state changes the runtime suppor
 
 ## Technical compatibility
 
-Technical compatibility is the equivalent of an API breaking change in a microservice. The "API" here is the contract between your graph code and the data already persisted by the [checkpointer](/oss/python/langgraph/persistence#checkpointer-libraries) for existing threads. When a thread resumes, LangGraph deserializes the saved state, dispatches it to a node by name, and expects the node to return values that fit the state schema.
+Technical compatibility is the equivalent of an API breaking change in a microservice. The "API" here is the contract between your graph code and the data already persisted by the [checkpointer](/oss/python/langgraph/checkpointers#checkpointer-libraries) for existing threads. When a thread resumes, LangGraph deserializes the saved state, dispatches it to a node by name, and expects the node to return values that fit the state schema.
 
 Common technical breakages:
 
-- **Renaming or removing a node** while threads are paused at or about to enter that node, for example at an [`interrupt`](https://reference.langchain.com/python/langgraph/types/interrupt) or via a checkpointed conditional edge that still routes to the old name. On resume, LangGraph cannot find the node by its saved name and the run fails. The [starting point for resuming a run](/oss/python/langgraph/durable-execution#starting-points-for-resuming-workflows) is the beginning of the node where execution stopped, so a missing node has nowhere to resume from.
+- **Renaming or removing a node** while threads are paused at or about to enter that node, for example at an [`interrupt`](https://reference.langchain.com/python/langgraph/types/interrupt) or via a checkpointed conditional edge that still routes to the old name. On resume, LangGraph cannot find the node by its saved name and the run fails. The starting point for resuming a run is the beginning of the node where execution stopped, so a missing node has nowhere to resume from.
 - **Renaming or removing a State key** that older checkpoints still contain or that downstream nodes still read.
 - **Tightening a State field**, such as making an `Optional` field required, narrowing a type, or adding a new required field with no default. Existing checkpoints will not satisfy the new schema.
 
@@ -55,7 +55,7 @@ Edge topology itself is *not* persisted in the checkpoint. Adding, removing, or 
 
 Before you remove a node, rename a State key, or otherwise make a change that older threads cannot tolerate, you want to know whether any threads are currently parked on the version of the code you are about to drop. LangGraph itself does not maintain a search index over thread state, so the answer depends on where your graph runs.
 
-**If you deploy to [LangSmith](/langsmith/deployment).** Use the Agent Server's thread search to filter by status. The `status` field accepts `idle`, `busy`, `interrupted`, and `error`, so you can bulk-query for `interrupted` or `busy` threads, optionally narrowed with metadata filters. See [Filter by thread status](/langsmith/use-threads#filter-by-thread-status) and [List threads](/langsmith/use-threads#list-threads).
+**If you [deploy to LangSmith](/langsmith/deploy-overview).** Use the Agent Server's thread search to filter by status. The `status` field accepts `idle`, `busy`, `interrupted`, and `error`, so you can bulk-query for `interrupted` or `busy` threads, optionally narrowed with metadata filters. See [Filter by thread status](/langsmith/use-threads#filter-by-thread-status) and [List threads](/langsmith/use-threads#list-threads).
 
 **Anywhere LangGraph runs.** Use [LangSmith tracing](/oss/python/langgraph/observability) to monitor which nodes are being entered and exited in production. This is the most reliable signal that a node or state field is no longer reachable in any active code path.
 
@@ -133,9 +133,9 @@ This pattern only works if you set the version *at thread start*, before any bra
 
 ## Non-determinism
 
-This category only applies to the [Functional API](/oss/python/langgraph/functional-api). The [Graph API](/oss/python/langgraph/graph-api) re-enters at the node boundary on resume, so node code is not "replayed" from the start of the function the way Temporal-style workflows are.
+This category only applies to the [Functional API](/oss/python/langgraph/functional-api) and to [**tasks**](/oss/python/langgraph/functional-api#task) or [`interrupt`](https://reference.langchain.com/python/langgraph/types/interrupt) calls inside a [Graph API](/oss/python/langgraph/graph-api) **node**. Plain Graph API **nodes** [re-run from the start of the node function](/oss/python/langgraph/graph-api#re-execution-and-idempotency) on resume; design side effects to be idempotent, but you do not need to preserve task call order unless you use **tasks** or [`interrupt`](https://reference.langchain.com/python/langgraph/types/interrupt) in that **node**.
 
-The Functional API, in contrast, replays the body of an `@entrypoint` from the beginning when a run resumes, using cached [`@task`](https://reference.langchain.com/python/langgraph/func/task) results to skip work that has already been done. Two kinds of changes break this model:
+A Functional API **entrypoint** compiles to a single **node** that replays the entrypoint body from the beginning when a run resumes, using cached [`@task`](https://reference.langchain.com/python/langgraph/func/task) results to skip work that has already been done. Two kinds of changes break this model:
 
 - **Adding, removing, or reordering `@task` calls or [`interrupt`](https://reference.langchain.com/python/langgraph/types/interrupt) calls** that come *before* the resume point. LangGraph matches cached results and resume values to calls by their position in the replay, so shifting that position can cause the wrong cached value to be replayed against a different call.
 - **Introducing non-deterministic operations outside of a `@task`**, such as `time.time()`, `random.random()`, or a network call inlined in the entrypoint body. On replay these produce different values than they did on the first run, which can change the control flow.
@@ -152,7 +152,7 @@ If you need to make non-trivial code changes to an `@entrypoint` that has in-fli
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langgraph/backward-compatibility.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

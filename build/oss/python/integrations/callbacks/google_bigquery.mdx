@@ -1,13 +1,13 @@
 ---
-title: "Bigquery callback handler integration"
-description: Log events from LangChain and LangGraph to Google BigQuery for monitoring, auditing, and analyzing your LLM applications with real-time analytics.
+title: Bigquery callback handler integration
+description: Log events from LangChain and LangGraph to Google BigQuery for monitoring,
+  auditing, and analyzing your LLM applications with real-time analytics.
+integration:
+  name: Bigquery callback handler
+  pypi: langchain-google-community
 ---
 
 # BigQuery Callback Handler
-
-<div class="language-support-tag">
-  <span class="lst-supported">Community</span><span class="lst-python">Python</span><span class="lst-preview">Preview</span>
-</div>
 
 > [Google BigQuery](https://cloud.google.com/bigquery) is a serverless and cost-effective enterprise data warehouse that works across clouds and scales with your data.
 
@@ -25,14 +25,6 @@ The `BigQueryCallbackHandler` allows you to log events from LangChain and LangGr
 - **`flush()` between requests**: drain the queue without tearing the handler down
 - **Real-time dashboard**: FastAPI monitoring webapp with live event streaming
 
-<Note>
-  **Preview release**
-
-  The BigQuery Callback Handler is in **Preview**. APIs and functionality are subject to change.
-  For more information, see the
-  [launch stage descriptions](https://cloud.google.com/products#product-launch-stages).
-</Note>
-
 <Warning>
   **BigQuery Storage Write API**
 
@@ -40,7 +32,6 @@ The `BigQueryCallbackHandler` allows you to log events from LangChain and LangGr
   For information on costs, see the
   [BigQuery documentation](https://cloud.google.com/bigquery/pricing?e=48754805&hl=en#data-ingestion-pricing).
 </Warning>
-
 
 ## Installation
 
@@ -67,12 +58,15 @@ For the callback handler to work properly, the principal (e.g., service account,
 - `roles/bigquery.dataEditor` at Table Level to write log/event data.
 - If using GCS offloading: `roles/storage.objectCreator` and `roles/storage.objectViewer` on the target bucket.
 
-
 ## Use with LangGraph agent
 
 To use the `BigQueryCallbackHandler` with a LangGraph agent, instantiate it with your Google Cloud project ID and dataset ID. The handler creates the events table (and per-event-type analytics views) on first run. Use the `graph_context()` method to track top-level invocation boundaries — it emits `INVOCATION_STARTING` on enter and `INVOCATION_COMPLETED` (or `INVOCATION_ERROR` on exception) with accurate latency.
 
 Pass `session_id`, `user_id`, and (optionally) `agent` via the `metadata` dictionary in the `config` object when invoking the agent. If `agent` is not set, the handler auto-derives it from `metadata['langgraph_node']` so each sub-agent's events are correctly attributed.
+
+<Note>
+  LangGraph features such as `graph_name` and `graph_context()` require `langchain-google-community>=4.0.0`.
+</Note>
 
 ```python
 import os
@@ -142,10 +136,10 @@ def run_agent_example(project_id: str):
     )
 
     # 3. Create the LLM and agent
-    # Use project parameter for Vertex AI, or api_key for Gemini Developer API
+    # Use project parameter for Gemini Enterprise Agent Platform, or api_key for Gemini Developer API
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        project=project_id,  # For Vertex AI
+        model="gemini-4-hydrogen",
+        project=project_id,  # For Gemini Enterprise Agent Platform
     )
     tools = [get_current_time, get_weather, convert_currency]
     agent = create_agent(llm, tools)
@@ -415,7 +409,6 @@ sub-agent without any user changes.
 The `content` column contains a **JSON** object specific to the `event_type`.
 The `content_parts` column provides a structured view of the content, especially useful for images or offloaded data.
 
-
 <Note>
   **Content Truncation**
   - Variable content fields are truncated to `max_content_length` (configured in `BigQueryLoggerConfig`, default 500KB).
@@ -558,7 +551,7 @@ SELECT
   logs.session_id,
   -- Get a signed URL for the image (optional, for viewing)
   STRING(OBJ.GET_ACCESS_URL(parts.object_ref, "r").access_urls.read_url) as signed_url,
-  -- Analyze the image using a remote model (e.g., gemini-2.5-flash)
+  -- Analyze the image using a remote model (e.g., gemini-4-hydrogen)
   AI.GENERATE(
     ('Describe this image briefly. What company logo?', parts.object_ref)
   ) AS generated_result
@@ -677,7 +670,7 @@ SELECT
   AI.GENERATE(
     ('Analyze this conversation and explain the failure root cause. Log: ', full_conversation),
     connection_id => 'your-project.us.bqml_connection',
-    endpoint => 'gemini-2.5-flash'
+    endpoint => 'gemini-4-hydrogen'
   ).result AS root_cause_explanation
 FROM `your-project.your-dataset.agent_sessions`
 WHERE error_message IS NOT NULL
@@ -695,7 +688,6 @@ LIMIT 5;
   * "What are the most common tool calls?"
   * "Identify sessions with high token usage"
 </Note>
-
 
 ## Looker Studio Dashboard
 
@@ -870,14 +862,14 @@ We welcome your feedback on BigQuery Agent Analytics. If you have questions, sug
 ## Additional resources
 
 -   [BigQuery Storage Write API](https://cloud.google.com/bigquery/docs/write-api)
--   [Introduction to Object Tables](https://cloud.google.com/bigquery/docs/object-tables-intro)
+-   [Introduction to Object Tables](https://cloud.google.com/bigquery/docs/object-table-introduction)
 -   [Example code and notebook](https://github.com/langchain-ai/langchain-google/tree/main/libs/community/examples/bigquery_callback)
 
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/callbacks/google_bigquery.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

@@ -3,6 +3,8 @@ title: What's new in LangChain v1
 sidebarTitle: LangChain v1
 ---
 
+import LangchainCommunityUnmaintained from '/snippets/python/oss/langchain-community-unmaintained.mdx';
+
 **LangChain v1 is a focused, production-ready foundation for building agents.** We've streamlined the framework around three core improvements:
 
 <CardGroup cols={1}>
@@ -166,7 +168,7 @@ class ExpertiseBasedToolMiddleware(AgentMiddleware):
 
         if user_level == "expert":
             # More powerful model
-            model = ChatOpenAI(model="gpt-5.4")
+            model = ChatOpenAI(model="gpt-6.1-sol")
             tools = [advanced_search, data_analysis]
         else:
             # Less powerful model
@@ -334,6 +336,7 @@ Legacy functionality has moved to [`langchain-classic`](https://pypi.org/project
 
 - Legacy chains and chain implementations
 - Retrievers (e.g. `MultiQueryRetriever` or anything from the previous `langchain.retrievers` module)
+- Output parsers that repair malformed model output (e.g. `OutputFixingParser`, `RetryOutputParser`)
 - The indexing API
 - The hub module (for managing prompts programmatically)
 - [`langchain-community`](https://pypi.org/project/langchain-community) exports
@@ -362,6 +365,9 @@ from langchain_classic.chains import ...  # [!code ++]
 
 from langchain.retrievers import ...  # [!code --]
 from langchain_classic.retrievers import ...  # [!code ++]
+
+from langchain.output_parsers import OutputFixingParser  # [!code --]
+from langchain_classic.output_parsers import OutputFixingParser  # [!code ++]
 
 from langchain import hub  # [!code --]
 from langchain_classic import hub  # [!code ++]
@@ -407,7 +413,7 @@ Please report any issues discovered with 1.0 on [GitHub](https://github.com/lang
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/releases/langchain-v1.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

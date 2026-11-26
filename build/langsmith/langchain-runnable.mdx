@@ -45,7 +45,7 @@ prompt = ChatPromptTemplate(
     [("system", instructions), ("user", "{text}")],
 )
 
-model = init_chat_model("gpt-5.4")
+model = init_chat_model("gpt-6.1-sol")
 chain = prompt | model | StrOutputParser()
 ```
 
@@ -96,8 +96,8 @@ async def main():
         chain,
         data=dataset,
         evaluators=[correct],
-        experiment_prefix="gpt-5.4, baseline",
-        metadata={"models": "openai:gpt-5.4"},  # optional, used to populate model/prompt/tool columns in UI
+        experiment_prefix="gpt-6.1-sol, baseline",
+        metadata={"models": "openai:gpt-6.1-sol"},  # optional, used to populate model/prompt/tool columns in UI
     )
     print(results)
 
@@ -117,8 +117,8 @@ const dataset = await client.clonePublicDataset(
 await evaluate(chain, {
   data: dataset.name,
   evaluators: [correct],
-  experimentPrefix: "gpt-5.4, baseline",
-  metadata: { models: "openai:gpt-5.4" },  // optional, used to populate model/prompt/tool columns in UI
+  experimentPrefix: "gpt-6.1-sol, baseline",
+  metadata: { models: "openai:gpt-6.1-sol" },  // optional, used to populate model/prompt/tool columns in UI
 });
 ```
 
@@ -136,7 +136,7 @@ The runnable is traced appropriately for each output.
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/langchain-runnable.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

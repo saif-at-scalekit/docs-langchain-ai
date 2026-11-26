@@ -2,6 +2,13 @@
 title: Messages
 ---
 
+import MessageSerializationPy from '/snippets/javascript/code-samples/message-serialization-py.mdx';
+import MessageSerializationJs from '/snippets/javascript/code-samples/message-serialization-js.mdx';
+import NotificationMetadataAddPy from '/snippets/javascript/code-samples/notification-metadata-add-py.mdx';
+import NotificationMetadataAddJs from '/snippets/javascript/code-samples/notification-metadata-add-js.mdx';
+import NotificationMetadataReadPy from '/snippets/javascript/code-samples/notification-metadata-read-py.mdx';
+import NotificationMetadataReadJs from '/snippets/javascript/code-samples/notification-metadata-read-js.mdx';
+
 {/* TODO: section on metadata types (response and usage) */}
 
 Messages are the fundamental unit of context for models in LangChain. They represent the input and output of models, carrying both the content and metadata needed to represent the state of a conversation when interacting with an LLM.
@@ -32,6 +39,12 @@ const messages = [systemMsg, humanMsg];
 const response = await model.invoke(messages);  // Returns AIMessage
 ```
 
+
+<Tip>
+Multi-turn [agents](/oss/javascript/langchain/agents) accumulate long message histories. [LangSmith](/langsmith/observability) records each turn, tool result, and model response so you can inspect the full conversation. Follow the [tracing quickstart](/langsmith/trace-with-langchain) to enable tracing.
+
+We recommend you also set up [LangSmith Engine](/langsmith/engine) which monitors your traces, detects issues, and proposes fixes.
+</Tip>
 
 ### Text prompts
 
@@ -138,6 +151,8 @@ const response = await model.invoke(messages);
 ### Human message
 
 A [`HumanMessage`](https://reference.langchain.com/javascript/langchain-core/messages/HumanMessage) represents user input and interactions. They can contain text, images, audio, files, and any other amount of multimodal [content](#message-content).
+
+When an agent adds a human message that the user did not type, such as a conversation summary, it can mark the message with [notification metadata](#notifications).
 
 #### Text content
 
@@ -287,6 +302,46 @@ console.log(response.usage_metadata);
 
 See [`UsageMetadata`](https://reference.langchain.com/javascript/langchain-core/messages/UsageMetadata) for details.
 
+#### Finish reason
+
+<Note>
+
+Finish reason fields require `@langchain/core>=1.5.0` and an integration that maps finish reasons, such as `@langchain/openai>=1.8.5`, `@langchain/anthropic>=1.6.6`, `@langchain/google-genai>=2.3.7`, or `@langchain/aws>=1.5.3`.
+
+</Note>
+
+An [`AIMessage`](https://reference.langchain.com/javascript/langchain-core/messages/AIMessage) records why the model stopped in its `response_metadata`:
+
+| Key | Value |
+| --- | ----- |
+| `finish_reason` | The provider's raw value, such as `end_turn` from Anthropic or `MAX_TOKENS` from Gemini. |
+| `normalized_finish_reason` | The same reason in one shared set of values, listed below. |
+| `finish_state` | Anthropic only. `complete`, or `suspended` when the caller must send another request to continue the turn (`pause_turn`). |
+
+| `normalized_finish_reason` | Meaning |
+| -------------------------- | ------- |
+| `stop` | The model finished its answer. |
+| `length` | The output hit the token limit. |
+| `context_exceeded` | The conversation hit the context window limit. |
+| `tool_call` | The model is requesting tool calls. |
+| `content_filter` | A provider safety or policy filter blocked the output. |
+| `refusal` | The model declined to answer. The message also has a [`refusal` content block](#content-block-reference). |
+| `error` | The response ended in an error status but still returned output. |
+| `other` | LangChain has no mapping for the provider's value. Check `finish_reason`. |
+
+Use `normalized_finish_reason` to handle the same outcome across providers, and `finish_reason` when you need the provider's exact value:
+
+
+```typescript
+const response = await model.invoke("Hello!");
+if (response.response_metadata.normalized_finish_reason === "length") {
+  // Retry with a higher token limit, or continue the answer
+}
+```
+
+
+The provider integration sets these keys, so they are absent when the integration doesn't map finish reasons or the provider doesn't report one. Messages from `invoke` and from event streaming carry them; individual chunks from `stream` do not.
+
 #### Streaming and chunks
 
 During streaming, you'll receive [`AIMessageChunk`](https://reference.langchain.com/javascript/langchain-core/messages/AIMessageChunk) objects that can be combined into a full message object:
@@ -318,6 +373,8 @@ Learn more:
 For models that support [tool calling](/oss/javascript/langchain/models#tool-calling), AI messages can contain tool calls. Tool messages are used to pass the results of a single tool execution back to the model.
 
 [Tools](/oss/javascript/langchain/tools) can generate [`ToolMessage`](https://reference.langchain.com/javascript/langchain-core/messages/ToolMessage) objects directly. Below, we show a simple example. Read more in the [tools guide](/oss/javascript/langchain/tools).
+
+When middleware creates a tool message instead of running the tool, it can mark the message with [notification metadata](#notifications). For example, [human-in-the-loop middleware](/oss/javascript/langchain/human-in-the-loop#interrupt-decision-types) marks the tool message for a `reject` or `respond` decision.
 
 
 
@@ -367,7 +424,7 @@ const response = await model.invoke(messages);  // Model processes the result
     The `artifact` field stores supplementary data that won't be sent to the model but can be accessed programmatically. This is useful for storing raw results, debugging information, or data for downstream processing without cluttering the model's context.
 
     <Accordion title="Example: Using artifact for retrieval metadata">
-        For example, a [retrieval](/oss/javascript/langchain/retrieval) tool could retrieve a passage from a document for reference by a model. Where message `content` contains text that the model will reference, an `artifact` can contain document identifiers or other metadata that an application can use (e.g., to render a page). See example below:
+        For example, a [retrieval](/oss/javascript/deepagents/retrieval) tool could retrieve a passage from a document for reference by a model. Where message `content` contains text that the model will reference, an `artifact` can contain document identifiers or other metadata that an application can use (e.g., to render a page). See example below:
 
 
         ```typescript
@@ -385,7 +442,7 @@ const response = await model.invoke(messages);  // Model processes the result
         ```
 
 
-        See the [RAG tutorial](/oss/javascript/langchain/rag) for an end-to-end example of building retrieval [agents](/oss/javascript/langchain/agents) with LangChain.
+        See the [RAG tutorial](/oss/javascript/deepagents/rag) for an end-to-end example of building retrieval [agents](/oss/javascript/langchain/agents) with LangChain.
     </Accordion>
 </Note>
 
@@ -530,8 +587,8 @@ it as output. Below we show short examples of input messages featuring multimoda
 <Note>
 Extra keys can be included top-level in the content block or nested in `"extras": {"key": value}`.
 
-[OpenAI](/oss/javascript/integrations/chat/openai) and [AWS Bedrock Converse](/oss/javascript/integrations/chat/bedrock),
-for example, require a filename for PDFs. See the [provider page](/oss/javascript/integrations/providers/overview)
+[OpenAI](/oss/javascript/integrations/chat/openai),
+for example, requires a filename for PDFs. See the [provider page](/oss/javascript/integrations/providers/overview)
 for your chosen model for specifics.
 </Note>
 
@@ -558,6 +615,7 @@ for your chosen model for specifics.
         {
           type: "image",
           source_type: "base64",
+          mime_type: "image/jpeg",
           data: "AAAAIGZ0eXBtcDQyAAAAAGlzb21tcDQyAAACAGlzb2...",
         },
       ],
@@ -703,6 +761,30 @@ Content blocks are represented (either when creating a message or accessing the 
                 {
                     type: "reasoning",
                     reasoning: "The user is asking about..."
+                }
+                ```
+            </Accordion>
+            <Accordion title="ContentBlock.Refusal" icon="ban">
+                **Purpose:** An explicit refusal that the model provider reports, such as an OpenAI `refusal` content part, an Anthropic `stop_reason: "refusal"`, or a Gemini safety finish reason. LangChain does not detect refusals that the model writes as ordinary text. Requires `@langchain/core>=1.3.7`.
+
+                <ParamField body="type" type="string" required>
+                    Always `"refusal"`
+                </ParamField>
+
+                <ParamField body="refusal" type="string" required>
+                    The refusal message, or an empty string if the provider sent none
+                </ParamField>
+
+                <ParamField body="extras" type="object">
+                    Additional provider-specific data, such as Anthropic's refusal `category` or Gemini's `finishReason`
+                </ParamField>
+
+                **Example:**
+                ```typescript
+                {
+                    type: "refusal",
+                    refusal: "",
+                    extras: { category: "cyber" }
                 }
                 ```
             </Accordion>
@@ -1012,7 +1094,7 @@ const imageBlock: ContentBlock.Multimodal.Image = {
 
 
 <Tip>
-    View the canonical type definitions in the [API reference](https://reference.langchain.com/javascript/modules/_langchain_core.messages.html).
+    View the canonical type definitions in the [API reference](https://reference.langchain.com/javascript/langchain-core/messages).
 </Tip>
 
 <Info>
@@ -1020,6 +1102,64 @@ const imageBlock: ContentBlock.Multimodal.Image = {
 
     Content blocks are not a replacement for the [`content`](https://reference.langchain.com/javascript/langchain-core/messages/BaseMessage) property, but rather a new property that can be used to access the content of a message in a standardized format.
 </Info>
+
+## Notifications
+
+An agent harness sometimes adds a human message that the user did not type, such as a background task update or a conversation summary. Notification metadata marks these messages so that your frontend can show them differently from user input. Middleware can also mark a tool message that it creates instead of running the tool.
+
+<Note>
+
+Notification metadata requires `@langchain/core>=1.3.2`. Marking a `ToolMessage` requires `@langchain/core>=1.4.2`.
+
+</Note>
+
+
+
+`addNotificationMetadata` returns a copy of a `HumanMessage` or `ToolMessage` with a `source` that names the feature that added it, and optional `data` with that feature's fields:
+
+<NotificationMetadataAddJs />
+
+`getNotificationMetadata` returns the `source` and `data` of a notification, or `undefined` for any other message:
+
+<NotificationMetadataReadJs />
+
+
+The metadata does not change the message content: the model reads the content as written. LangChain's chat model integrations do not send the metadata to the model. Anyone who can send input to a thread can set it, so do not use it to decide whether to trust a message. A notification can be a tool message, so check the message type before you show a notification as user input.
+
+LangChain notification sources include:
+
+| Source | Added when | Details |
+| --- | --- | --- |
+| `hitl_interrupt_decision` | The human-in-the-loop middleware creates a tool message for a `reject` or `respond` decision. `data` has `decision`. | [Interrupt decision types](/oss/javascript/langchain/human-in-the-loop#interrupt-decision-types) |
+| `summarization` | The summarization middleware summarizes the conversation history. | [Summarization](/oss/javascript/langchain/middleware/built-in#summarization) |
+
+Deep Agents notification sources include:
+
+
+
+| Source | Added when | Details |
+| --- | --- | --- |
+| `async_subagent` | An async subagent task finishes, fails, or waits for input. `data` is the task event. | [Async subagents](/oss/javascript/deepagents/async-subagents#understand-the-lifecycle) |
+| `summarization` | The agent summarizes the conversation history. | [Summarization](/oss/javascript/deepagents/context-engineering#summarization) |
+| `pinned_skill` | The agent adds a pinned skill to the conversation. | [Pin skills](/oss/javascript/deepagents/skills#pin-skills) |
+
+
+## Serialization
+
+You can serialize messages to plain objects for storage and deserialize back to message instances. This is useful for persisting conversation history and resuming sessions.
+
+
+
+<MessageSerializationJs />
+
+
+
+
+
+<Warning>
+**`load()` deserializes data by instantiating classes and invoking constructors. Never call `load()` on untrusted or user-supplied input.** Only deserialize data that originates from a source you control, such as your own database.
+</Warning>
+
 
 ## Use with chat models
 
@@ -1034,7 +1174,7 @@ Refer to the below guides to learn more:
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langchain/messages.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

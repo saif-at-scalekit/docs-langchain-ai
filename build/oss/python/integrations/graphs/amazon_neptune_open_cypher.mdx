@@ -1,7 +1,11 @@
 ---
-title: "Amazon neptune with cypher integration"
-description: "Integrate with the Amazon neptune with cypher graph using LangChain Python."
+title: Amazon neptune with cypher integration
+description: Integrate with the Amazon neptune with cypher graph using LangChain Python.
+integration:
+  name: Amazon neptune with cypher
+  pypi: langchain-aws
 ---
+
 
 >[Amazon Neptune](https://aws.amazon.com/neptune/) is a high-performance graph analytics and serverless database for superior scalability and availability.
 >
@@ -46,7 +50,7 @@ This QA chain queries the Neptune graph database using openCypher and returns a 
 from langchain_aws import ChatBedrockConverse
 from langchain_aws.chains import create_neptune_opencypher_qa_chain
 
-MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+MODEL_ID = "anthropic.claude-sonnet-4-5-20250929-v1:0"
 llm = ChatBedrockConverse(
     model=MODEL_ID,
     temperature=0,
@@ -64,11 +68,11 @@ Austin airport has 98 outgoing routes.
 
 ### Adding message history
 
-The Neptune openCypher QA chain has the ability to be wrapped by [`RunnableWithMessageHistory`](https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html#langchain_core.runnables.history.RunnableWithMessageHistory). This adds message history to the chain, allowing us to create a chatbot that retains conversation state across multiple invocations.
+The Neptune openCypher QA chain has the ability to be wrapped by [`RunnableWithMessageHistory`](https://reference.langchain.com/python/langchain-core/runnables/history/RunnableWithMessageHistory). This adds message history to the chain, allowing us to create a chatbot that retains conversation state across multiple invocations.
 
 To start, we need a way to store and load the message history. For this purpose, each thread will be created as an instance of [`InMemoryChatMessageHistory`](https://reference.langchain.com/python/langchain-core/chat_history/InMemoryChatMessageHistory), and stored into a dictionary for repeated access.
 
-(Also see: [python.langchain.com/docs/versions/migrating_memory/chat_history/#chatmessagehistory](https://python.langchain.com/docs/versions/migrating_memory/chat_history/#chatmessagehistory))
+(Also see: [Short-term memory](/oss/python/langchain/short-term-memory))
 
 ```python
 from langchain_core.chat_history import InMemoryChatMessageHistory
@@ -152,7 +156,7 @@ The four European destinations you can fly to directly from Austin airport are:
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/graphs/amazon_neptune_open_cypher.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

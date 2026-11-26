@@ -1,19 +1,43 @@
 ---
-title: "Azure Cosmos DB mongo vcore integration"
-description: "Integrate with the Azure Cosmos DB mongo vcore vector store using LangChain Python."
+title: Azure Cosmos DB mongo vcore integration
+description: Integrate with the Azure Cosmos DB mongo vcore vector store using LangChain Python.
+integration:
+  name: AzureCosmosDBMongoVCoreVectorStore
+  pypi: langchain-azure-cosmosdb
+  featured: true
+  delete_by_id: true
+  filtering: true
+  search_by_vector: true
+  search_with_score: true
+  async_api: false
+  passes_standard_tests: true
+  multi_tenancy: true
+  ids_in_add_documents: true
 ---
 
-This notebook shows you how to leverage this integrated [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) to store documents in collections, create indicies and perform vector search queries using approximate nearest neighbor algorithms such as COS (cosine distance), L2 (Euclidean distance), and IP (inner product) to locate documents close to the query vectors.
+
+
+import LangchainCommunityUnmaintained from '/snippets/python/oss/langchain-community-unmaintained.mdx';
+
+This notebook shows you how to leverage this integrated [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) to store documents in collections, create indices and perform vector search queries using approximate nearest neighbor algorithms such as COS (cosine distance), L2 (Euclidean distance), and IP (inner product) to locate documents close to the query vectors.
 
 Azure Cosmos DB is the database that powers OpenAI's ChatGPT service. It offers single-digit millisecond response times, automatic and instant scalability, along with guaranteed speed at any scale.
 
-[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture. You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/documentdb/) provides developers with a fully managed MongoDB-compatible database service for building modern applications with a familiar architecture. You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
+
+With Cosmos DB for MongoDB vCore, developers can enjoy the benefits of native Azure integrations, low total cost of ownership (TCO), and the familiar vCore architecture when migrating existing applications or building new ones. Use vector search in Azure Cosmos DB for MongoDB vCore to integrate your AI-based applications with the data stored in Azure Cosmos DB.
 
 [Sign Up](https://azure.microsoft.com/en-us/free/) for lifetime free access to get started today.
 
-```python
-pip install -qU pymongo langchain-openai langchain-azure-ai
-```
+<CodeGroup>
+    ```bash pip
+    pip install -qU pymongo langchain-openai langchain-azure-cosmosdb
+    ```
+
+    ```bash uv
+    uv add pymongo langchain-openai langchain-azure-cosmosdb
+    ```
+</CodeGroup>
 
 ```python
 import os
@@ -38,11 +62,13 @@ os.environ["OPENAI_EMBEDDINGS_DEPLOYMENT"] = "text-embedding-ada-002"
 
 Now, we need to load the documents into the collection, create the index and then run our queries against the index to retrieve matches.
 
-Please refer to the [documentation](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search) if you have questions about certain parameters
+Please refer to the [documentation](https://learn.microsoft.com/en-us/azure/documentdb/vector-search) if you have questions about certain parameters
+
+<LangchainCommunityUnmaintained />
 
 ```python
 from langchain_community.document_loaders import TextLoader
-from langchain_azure_ai.vectorstores.azure_cosmos_db_mongo_vcore import (
+from langchain_azure_cosmosdb import (
     AzureCosmosDBMongoVCoreVectorSearch,
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
@@ -99,7 +125,7 @@ vectorstore = AzureCosmosDBMongoVCoreVectorSearch.from_documents(
     index_name=INDEX_NAME,
 )
 
-# Read more about these variables in detail here. https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search
+# Read more about these variables in detail here. https://learn.microsoft.com/en-us/azure/documentdb/vector-search
 num_lists = 100
 dimensions = 1536
 similarity_algorithm = CosmosDBSimilarityType.COS
@@ -220,7 +246,7 @@ And I did that 4 days ago, when I nominated Circuit Court of Appeals Judge Ketan
 
 ## Filtered vector search (Preview)
 
-Azure Cosmos DB for MongoDB supports pre-filtering with `$lt`, `$lte`, `$eq`, `$neq`, `$gte`, `$gt`, `$in`, `$nin`, and `$regex`. To use this feature, enable `"filtering vector search"` in the "Preview Features" tab of your Azure Subscription. Learn more about [filtered vector search preview features](https://learn.microsoft.com/azure/cosmos-db/mongodb/vcore/vector-search#filtered-vector-search-preview).
+Azure Cosmos DB for MongoDB supports pre-filtering with `$lt`, `$lte`, `$eq`, `$neq`, `$gte`, `$gt`, `$in`, `$nin`, and `$regex`. To use this feature, enable `"filtering vector search"` in the "Preview Features" tab of your Azure Subscription. Learn more about [filtered vector search preview features](https://learn.microsoft.com/en-us/azure/documentdb/vector-search#filtered-vector-search).
 
 ```python
 # Create a filter index
@@ -271,7 +297,7 @@ len(docs)
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/python/integrations/vectorstores/azure_cosmos_db_mongo_vcore.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

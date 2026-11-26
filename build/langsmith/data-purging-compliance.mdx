@@ -3,13 +3,16 @@ title: Data purging for compliance
 sidebarTitle: Data purging for compliance
 ---
 
-This guide covers the various features available after data reaches LangSmith Cloud servers to help you achieve your privacy goals.
+This guide covers retention and deletion controls for data stored in LangSmith.
 
 ## Data retention
 
-LangSmith provides automatic data retention capabilities to help with compliance and storage management. Data retention policies can be configured at the organization and project levels.
+LangSmith provides automatic data retention capabilities to help with compliance and storage management. Data retention policies can be configured at two levels:
 
-For detailed information about data retention configuration and management, please refer to the [Data Retention concepts](/langsmith/administration-overview#data-retention) documentation.
+- **Workspace level**: Enterprise customers with the required permissions can set extended retention as the workspace default and customize the retention duration. See [Customize extended retention policy](#customize-extended-retention-policy).
+- **Environment level**: Customers with the required permissions can set the default retention tier for each [agent environment](/langsmith/agent-environments), choosing between base or extended retention. See [Change default retention for an environment](/langsmith/billing#change-default-retention-for-an-environment).
+
+For the retention period of each tier on Cloud, BYOC, and self-hosted, see [Retention periods](/langsmith/usage-and-billing#retention-periods).
 
 ## Customize extended retention policy
 
@@ -17,22 +20,65 @@ For detailed information about data retention configuration and management, plea
 This feature is available for [Enterprise](/langsmith/pricing-plans) plan customers. For [self-hosted](/langsmith/self-hosted) Enterprise customers, refer to the [workspace-level configuration section](#workspace-level-extended-retention-for-self-hosted).
 </Note>
 
-[Enterprise](/langsmith/pricing-plans) customers can customize the extended data retention period for traces at the [workspace](/langsmith/administration-overview#workspaces) level to meet specific compliance requirements. By default, extended retention is set to 400 days, but you can adjust this based on your organization's needs. Changes to the retention period apply to new traces only.
+[Enterprise](/langsmith/pricing-plans) customers can customize the extended data retention period for traces at the [workspace](/langsmith/administration-overview#workspaces) level to meet specific compliance requirements. The durations you can choose depend on your hosting option. See [Retention periods](/langsmith/usage-and-billing#retention-periods).
+
+<Note>
+Changes to the retention period apply to new traces only. Existing traces are not affected.
+</Note>
 
 ### Configure extended retention
 
-<Note>
-The UI steps below require the **Organization Admin** or **Organization Operator** role (`organization:manage` permission). Workspace Admins can also set the extended retention duration for their own workspace directly via the API (`workspaces:manage` permission). For a full permissions reference, see [Organization and workspace operations](/langsmith/organization-workspace-operations).
-</Note>
+Organization Admins and Operators (`organization:manage`) can configure retention for any workspace. Workspace Admins can configure their own workspace (`workspaces:manage`). For a full permissions reference, see [Organization and workspace operations](/langsmith/organization-workspace-operations).
 
-In the [LangSmith UI](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=langsmith-data-purging-compliance):
+<Tabs>
+  <Tab title="UI">
+    In the [LangSmith UI](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=langsmith-data-purging-compliance):
 
-1. Navigate to **Settings** at the bottom of the page.
-1. Select **Usage configuration** from the left-hand menu.
-1. Find the workspace in the list that you would like to configure.
-1. Click on the value under the **Data retention policy** column for that workspace.
-1. On the **workspace usage configurations** modal, customize the extended policy using the dropdown for **Extended - All traces are retained for** option.
-1. Select **Save**.
+    1. Navigate to **Settings** at the bottom of the page.
+    1. Select **Usage configuration** from the left-hand menu.
+    1. Find the workspace in the list that you would like to configure.
+    1. Click on the value under the **Data retention policy** column for that workspace.
+    1. On the **workspace usage configurations** modal, customize the extended policy using the dropdown for **Extended - All traces are retained for** option. The dropdown lists the [durations available for your hosting option](/langsmith/usage-and-billing#retention-periods).
+    1. Select **Save**.
+  </Tab>
+  <Tab title="API">
+    To read current settings:
+
+    **Organization level** (`organization:manage`)
+
+    ```bash
+    curl -X GET "https://api.smith.langchain.com/api/v1/orgs/ttl-settings" \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+
+    **Workspace level** (`workspaces:manage`)
+
+    ```bash
+    curl -X GET "https://api.smith.langchain.com/api/v1/ttl-settings" \
+      -H "x-api-key: YOUR_API_KEY"
+    ```
+
+    To update the retention period, set `resource_type` to `"run"` for traces and `ttl_days` to one of the [durations available for your hosting option](/langsmith/usage-and-billing#retention-periods).
+
+    **Organization level** (`organization:manage`)
+
+    ```bash
+    curl -X PUT "https://api.smith.langchain.com/api/v1/orgs/ttl-settings" \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"resource_type": "run", "ttl_days": 90}'
+    ```
+
+    **Workspace level** (`workspaces:manage`)
+
+    ```bash
+    curl -X PUT "https://api.smith.langchain.com/api/v1/ttl-settings" \
+      -H "x-api-key: YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"resource_type": "run", "ttl_days": 90}'
+    ```
+  </Tab>
+</Tabs>
 
 ### Workspace-level extended retention for self-hosted
 
@@ -44,6 +90,39 @@ If you use blob storage, you **must** add a lifecycle rule for each custom reten
 
 To configure this for self-hosted deployments, refer to the [self-hosted TTL documentation](/langsmith/self-host-ttl) for the legacy system-wide approach or contact [support](https://support.langchain.com).
 
+## Disable extended trace retention
+
+The workspace retention restriction blocks extended retention for new traces and new upgrade requests. Use it to keep new traces at base retention without disabling feedback or evaluations. The switch is off by default.
+
+<Note>
+This feature is available for [Enterprise](/langsmith/pricing-plans) plan customers. For self-hosted deployments, this feature is available in the LangSmith 0.18.29rc1 release candidate, packaged with [Helm chart version 0.18.0-rc.78](https://github.com/langchain-ai/helm/releases/tag/langsmith-0.18.0-rc.78). Older data planes might not show the switch.
+</Note>
+
+Changing this setting requires `organization:retention:manage`, granted to [Organization Admins and Operators](/langsmith/rbac#organization-roles). A Workspace Admin role alone does not grant this permission.
+
+To disable extended retention for a workspace:
+
+1. In the [LangSmith UI](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=langsmith-data-purging-compliance), go to **Settings** > **Usage configuration**.
+1. Select the workspace's **Data retention policy**.
+1. Turn on **Disable Extended Trace Retention**.
+1. Select **Save**.
+
+While the restriction is active:
+
+- **New traces**: Use base retention, even if the environment's saved default is extended.
+- **Retention upgrades**: New requests do not extend traces, including existing base-retention traces. Feedback, evaluations, and other automation actions continue without extending retention.
+- **Environment defaults**: You cannot set new environment defaults to extended or change base defaults to extended. Existing extended defaults remain saved but do not apply to new traces.
+- **Existing extended traces**: Keep their expiration dates. The restriction does not shorten their retention or delete them.
+- **Saved preferences**: Environment defaults and retention preferences for rules and evaluators stay unchanged. Turning the switch off again allows those settings to apply.
+
+<Warning>
+Changes take time to propagate through cached settings. Previously accepted upgrades, including queued or retried work, can still finish after you save. This setting is not an immediate or retroactive deletion control.
+</Warning>
+
+This restriction is separate from [retention durations](#customize-extended-retention-policy), [environment defaults](/langsmith/billing#change-default-retention-for-an-environment), and individual rule or evaluator opt-outs. Unlike an [extended-retention usage limit](/langsmith/usage-and-billing#side-effects-of-extended-data-retention-traces-limit), it lets feedback and evaluations continue without extending retention.
+
+Self-hosted deployments [do not track long-lived trace usage](/langsmith/granular-usage) in version 0.16.0 and later. The **Long-lived only** filter always shows zero results, so it does not verify this restriction.
+
 ## Trace deletes
 
 You can use the API to complete trace deletes. The API supports two methods for deleting traces:
@@ -51,7 +130,7 @@ You can use the API to complete trace deletes. The API supports two methods for 
 1. **By trace IDs and session ID**: Delete specific traces by providing a list of trace IDs and their corresponding session ID (up to 1000 traces per request)
 2. **By metadata**: Delete traces across a workspace that match any of the specified metadata key-value pairs
 
-For more details, refer to the [API spec](https://api.smith.langchain.com/redoc#tag/run/operation/delete_runs_api_v1_runs_delete_post).
+For more details, refer to the [API spec](/langsmith/smith-api/run/delete-runs).
 
 <Warning>
 All trace deletions will delete related entities like feedbacks, aggregations, and stats across all data storages.
@@ -59,7 +138,7 @@ All trace deletions will delete related entities like feedbacks, aggregations, a
 
 ### Deletion timeline
 
-Trace deletions are processed during non-peak usage times and are not instant. LangChain runs the delete job on the weekend. There is no confirmation of deletion - you'll need to query the data again to verify it has been removed.
+Trace deletions are processed during non-peak usage times and are not instant. SmithDB may make traces unqueryable right away. Most deletes are hardened within 6 hours or sooner. To confirm deletion, query the data again to verify it has been removed.
 
 ### Delete specific traces
 
@@ -79,33 +158,6 @@ curl -X POST "https://api.smith.langchain.com/api/v1/runs/delete" \
   }'
 ```
 
-### Delete by metadata
-
-When deleting by metadata:
-
-- Accepts a `metadata` object of key/value pairs. KV pair matching uses an **or** condition. A trace will match if it has **any** of the key-value pairs specified in metadata (not all)
-- You don't need to specify a session id when deleting by metadata. Deletes will apply across the workspace.
-
-To delete traces based on metadata across a workspace (matches **any** of the metadata key-value pairs):
-
-```bash
-curl -X POST "https://api.smith.langchain.com/api/v1/runs/delete" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "metadata": {
-      "user_id": "user123",
-      "environment": "staging"
-    }
-  }'
-```
-
-This will delete traces that have either `user_id: "user123"` **or** `environment: "staging"` in their metadata.
-
-<Warning>
-Remember that you can only schedule up to 1000 traces per session per request. For larger deletions, you'll need to make multiple requests.
-</Warning>
-
 ## Example deletes
 
 You can delete dataset examples self-serve via our API, which supports both soft and hard deletion methods depending on your data retention needs.
@@ -122,7 +174,7 @@ For bulk operations, example deletion follows a two-step process:
 
 Find all examples with matching metadata across all datasets in a workspace.
 
-[GET /examples](https://api.smith.langchain.com/redoc#tag/examples/operation/read_examples_api_v1_examples_get)
+[GET /examples](/langsmith/smith-api/examples/read-examples)
 
 - `as_of` must be explicitly specified as a timestamp. Only examples created before the `as_of` date will be returned
 
@@ -144,7 +196,7 @@ This will return examples that have either `user_id: "user123"` **or** `environm
 
 Once you have the example IDs, send a delete request. This will zero-out the inputs, outputs, and metadata from all versions of the dataset for that example.
 
-[POST /v1/platform/datasets/examples/delete/](https://api.smith.langchain.com/redoc?#tag/examples/paths/~1v1~1platform~1datasets~1examples~1delete/post)
+[POST /v1/platform/datasets/examples/delete/](/langsmith/smith-api/examples/hard-delete-examples)
 
 - Specify `example_ids` (list of example IDs) and `hard_delete` (boolean) in the request body
 
@@ -176,7 +228,7 @@ curl -X POST "https://api.smith.langchain.com/v1/platform/datasets/examples/dele
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/data-purging-compliance.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

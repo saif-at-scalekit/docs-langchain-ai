@@ -316,7 +316,7 @@ Before deploying an application, verify the following with `langgraph up`:
 - All [dependencies](/langsmith/setup-app-requirements-txt) install correctly in the container.
 - Application starts without errors.
 - Graph executes successfully.
-- All [environment variables](/langsmith/env-var) work correctly.
+- All [environment variables](/langsmith/env-var-cloud) work correctly.
 - [Authentication/authorization](/langsmith/cli#adding-custom-authentication) works as expected.
 
 ## Dependencies configuration
@@ -484,7 +484,6 @@ Now that you have a LangGraph app running locally, you're ready to deploy it:
 
 **Choose a hosting option for LangSmith:**
 - [**Cloud**](/langsmith/cloud): Fastest setup, fully managed (recommended).
-- [**Hybrid**](/langsmith/hybrid): <Tooltip tip="The runtime environment where your Agent Servers and agents execute.">Data plane</Tooltip> in your cloud, <Tooltip tip="The LangSmith UI and APIs for managing deployments.">control plane</Tooltip> managed by LangChain.
 - [**Self-hosted**](/langsmith/self-hosted): Full control in your infrastructure.
 
 For more details, refer to the [Platform setup comparison](/langsmith/platform-setup).
@@ -495,7 +494,7 @@ For more details, refer to the [Platform setup comparison](/langsmith/platform-s
 
 **Explore features:**
 - **[Studio](/langsmith/studio)**: Visualize, interact with, and debug your application with the Studio UI. Try the [Studio quickstart](/langsmith/quick-start-studio).
-- **API References**: [LangSmith Deployment API](https://langchain-ai.github.io/langgraph/cloud/reference/api/api_ref/), [Python SDK](/langsmith/langgraph-python-sdk), [JS/TS SDK](/langsmith/langgraph-js-ts-sdk)
+- **API References**: [LangSmith Agent Server API](/langsmith/server-api-ref), [Python SDK](/langsmith/langgraph-python-sdk), [JS/TS SDK](/langsmith/langgraph-js-ts-sdk)
 
 ## Related resources
 
@@ -509,7 +508,7 @@ For more details, refer to the [Platform setup comparison](/langsmith/platform-s
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/local-dev-testing.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

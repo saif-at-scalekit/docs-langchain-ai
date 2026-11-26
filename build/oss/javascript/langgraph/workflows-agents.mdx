@@ -3,7 +3,8 @@ title: Workflows and agents
 sidebarTitle: Workflows + agents
 ---
 
-
+import WorkflowsAgentsToolRuntimeStateContextPy from "/snippets/javascript/code-samples/workflows-agents-tool-runtime-state-context-py.mdx";
+import WorkflowsAgentsToolRuntimeStateContextJs from "/snippets/javascript/code-samples/workflows-agents-tool-runtime-state-context-js.mdx";
 
 This guide reviews common workflow and agent patterns.
 
@@ -15,7 +16,7 @@ This guide reviews common workflow and agent patterns.
 LangGraph offers several benefits when building agents and workflows, including [persistence](/oss/javascript/langgraph/persistence), [streaming](/oss/javascript/langgraph/streaming), and support for debugging as well as [deployment](/oss/javascript/langgraph/deploy).
 
 <Tip>
-Trace and compare these workflow patterns with [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=oss-langgraph-workflows-agents). Follow the [tracing quickstart](/langsmith/trace-with-langgraph) to see how data flows through each step.
+Trace and compare these workflow patterns with [LangSmith](https://smith.langchain.com?utm_source=docs&utm_medium=cta&utm_campaign=langsmith-signup&utm_content=oss-langgraph-workflows-agents). Follow the [tracing quickstart](/langsmith/trace-with-langgraph) to see how data flows through each step. We recommend you also set up [LangSmith Engine](/langsmith/engine) which monitors your traces, detects issues, and proposes fixes.
 </Tip>
 
 ## Setup
@@ -120,8 +121,7 @@ Prompt chaining is when each LLM call processes the output of the previous call.
 
 
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 import { StateGraph, StateSchema, GraphNode, ConditionalEdgeRouter } from "@langchain/langgraph";
 import { z } from "zod/v4";
 
@@ -142,7 +142,7 @@ const generateJoke: GraphNode<typeof State> = async (state) => {
 };
 
 // Gate function to check if the joke has a punchline
-const checkPunchline: ConditionalEdgeRouter<typeof State, "improveJoke"> = (state) => {
+const checkPunchline: ConditionalEdgeRouter<{ InputSchema: typeof State; Nodes: "improveJoke" }> = (state) => {
   // Simple check - does the joke contain "?" or "!"
   if (state.joke?.includes("?") || state.joke?.includes("!")) {
     return "Pass";
@@ -196,64 +196,6 @@ if (state.improvedJoke !== undefined) {
   console.log("Joke failed quality gate - no punchline detected!");
 }
 ```
-```typescript Functional API
-import { task, entrypoint } from "@langchain/langgraph";
-
-// Tasks
-
-// First LLM call to generate initial joke
-const generateJoke = task("generateJoke", async (topic: string) => {
-  const msg = await llm.invoke(`Write a short joke about ${topic}`);
-  return msg.content;
-});
-
-// Gate function to check if the joke has a punchline
-function checkPunchline(joke: string) {
-  // Simple check - does the joke contain "?" or "!"
-  if (joke.includes("?") || joke.includes("!")) {
-    return "Pass";
-  }
-  return "Fail";
-}
-
-  // Second LLM call to improve the joke
-const improveJoke = task("improveJoke", async (joke: string) => {
-  const msg = await llm.invoke(
-    `Make this joke funnier by adding wordplay: ${joke}`
-  );
-  return msg.content;
-});
-
-// Third LLM call for final polish
-const polishJoke = task("polishJoke", async (joke: string) => {
-  const msg = await llm.invoke(
-    `Add a surprising twist to this joke: ${joke}`
-  );
-  return msg.content;
-});
-
-const workflow = entrypoint(
-  "jokeMaker",
-  async (topic: string) => {
-    const originalJoke = await generateJoke(topic);
-    if (checkPunchline(originalJoke) === "Pass") {
-      return originalJoke;
-    }
-    const improvedJoke = await improveJoke(originalJoke);
-    const polishedJoke = await polishJoke(improvedJoke);
-    return polishedJoke;
-  }
-);
-
-const stream = await workflow.stream("cats", {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-}
-```
-</CodeGroup>
 
 
 ## Parallelization
@@ -272,8 +214,7 @@ Some examples include:
 
 
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 import { StateGraph, StateSchema, GraphNode } from "@langchain/langgraph";
 import * as z from "zod";
 
@@ -333,67 +274,6 @@ const parallelWorkflow = new StateGraph(State)
 const result = await parallelWorkflow.invoke({ topic: "cats" });
 console.log(result.combinedOutput);
 ```
-```typescript Functional API
-import { task, entrypoint } from "@langchain/langgraph";
-
-// Tasks
-
-// First LLM call to generate initial joke
-const callLlm1 = task("generateJoke", async (topic: string) => {
-  const msg = await llm.invoke(`Write a joke about ${topic}`);
-  return msg.content;
-});
-
-// Second LLM call to generate story
-const callLlm2 = task("generateStory", async (topic: string) => {
-  const msg = await llm.invoke(`Write a story about ${topic}`);
-  return msg.content;
-});
-
-// Third LLM call to generate poem
-const callLlm3 = task("generatePoem", async (topic: string) => {
-  const msg = await llm.invoke(`Write a poem about ${topic}`);
-  return msg.content;
-});
-
-// Combine outputs
-const aggregator = task("aggregator", async (params: {
-  topic: string;
-  joke: string;
-  story: string;
-  poem: string;
-}) => {
-  const { topic, joke, story, poem } = params;
-  return `Here's a story, joke, and poem about ${topic}!\n\n` +
-    `STORY:\n${story}\n\n` +
-    `JOKE:\n${joke}\n\n` +
-    `POEM:\n${poem}`;
-});
-
-// Build workflow
-const workflow = entrypoint(
-  "parallelWorkflow",
-  async (topic: string) => {
-    const [joke, story, poem] = await Promise.all([
-      callLlm1(topic),
-      callLlm2(topic),
-      callLlm3(topic),
-    ]);
-
-    return aggregator({ topic, joke, story, poem });
-  }
-);
-
-// Invoke
-const stream = await workflow.stream("cats", {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-}
-```
-</CodeGroup>
 
 
 ## Routing
@@ -404,8 +284,7 @@ Routing workflows process inputs and then directs them to context-specific tasks
 
 
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 import { StateGraph, StateSchema, GraphNode, ConditionalEdgeRouter } from "@langchain/langgraph";
 import * as z from "zod";
 
@@ -480,7 +359,7 @@ const llmCallRouter: GraphNode<typeof State> = async (state) => {
 };
 
 // Conditional edge function to route to the appropriate node
-const routeDecision: ConditionalEdgeRouter<typeof State, "llmCall1" | "llmCall2" | "llmCall3"> = (state) => {
+const routeDecision: ConditionalEdgeRouter<{ InputSchema: typeof State; Nodes: "llmCall1" | "llmCall2" | "llmCall3" }> = (state) => {
   // Return the node name you want to visit next
   if (state.decision === "story") {
     return "llmCall1";
@@ -514,102 +393,6 @@ const state = await routerWorkflow.invoke({
 });
 console.log(state.output);
 ```
-```typescript Functional API
-import * as z from "zod";
-import { task, entrypoint } from "@langchain/langgraph";
-
-// Schema for structured output to use as routing logic
-const routeSchema = z.object({
-  step: z.enum(["poem", "story", "joke"]).describe(
-    "The next step in the routing process"
-  ),
-});
-
-// Augment the LLM with schema for structured output
-const router = llm.withStructuredOutput(routeSchema);
-
-// Tasks
-// Write a story
-const llmCall1 = task("generateStory", async (input: string) => {
-  const result = await llm.invoke([{
-    role: "system",
-    content: "You are an expert storyteller.",
-  }, {
-    role: "user",
-    content: input
-  }]);
-  return result.content;
-});
-
-// Write a joke
-const llmCall2 = task("generateJoke", async (input: string) => {
-  const result = await llm.invoke([{
-    role: "system",
-    content: "You are an expert comedian.",
-  }, {
-    role: "user",
-    content: input
-  }]);
-  return result.content;
-});
-
-// Write a poem
-const llmCall3 = task("generatePoem", async (input: string) => {
-  const result = await llm.invoke([{
-    role: "system",
-    content: "You are an expert poet.",
-  }, {
-    role: "user",
-    content: input
-  }]);
-  return result.content;
-});
-
-// Route the input to the appropriate node
-const llmCallRouter = task("router", async (input: string) => {
-  const decision = await router.invoke([
-    {
-      role: "system",
-      content: "Route the input to story, joke, or poem based on the user's request."
-    },
-    {
-      role: "user",
-      content: input
-    },
-  ]);
-  return decision.step;
-});
-
-// Build workflow
-const workflow = entrypoint(
-  "routerWorkflow",
-  async (input: string) => {
-    const nextStep = await llmCallRouter(input);
-
-    let llmCall;
-    if (nextStep === "story") {
-      llmCall = llmCall1;
-    } else if (nextStep === "joke") {
-      llmCall = llmCall2;
-    } else if (nextStep === "poem") {
-      llmCall = llmCall3;
-    }
-
-    const finalResult = await llmCall(input);
-    return finalResult;
-  }
-);
-
-// Invoke
-const stream = await workflow.stream("Write me a joke about cats", {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-}
-```
-</CodeGroup>
 
 
 ## Orchestrator-worker
@@ -626,8 +409,7 @@ Orchestrator-worker workflows provide more flexibility and are often used when s
 
 
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 
 type SectionSchema = {
     name: string;
@@ -640,79 +422,6 @@ type SectionsSchema = {
 // Augment the LLM with schema for structured output
 const planner = llm.withStructuredOutput(sectionsSchema);
 ```
-```typescript Functional API
-import * as z from "zod";
-import { task, entrypoint } from "@langchain/langgraph";
-
-// Schema for structured output to use in planning
-const sectionSchema = z.object({
-  name: z.string().describe("Name for this section of the report."),
-  description: z.string().describe(
-    "Brief overview of the main topics and concepts to be covered in this section."
-  ),
-});
-
-const sectionsSchema = z.object({
-  sections: z.array(sectionSchema).describe("Sections of the report."),
-});
-
-// Augment the LLM with schema for structured output
-const planner = llm.withStructuredOutput(sectionsSchema);
-
-// Tasks
-const orchestrator = task("orchestrator", async (topic: string) => {
-  // Generate queries
-  const reportSections = await planner.invoke([
-    { role: "system", content: "Generate a plan for the report." },
-    { role: "user", content: `Here is the report topic: ${topic}` },
-  ]);
-
-  return reportSections.sections;
-});
-
-const llmCall = task("sectionWriter", async (section: z.infer<typeof sectionSchema>) => {
-  // Generate section
-  const result = await llm.invoke([
-    {
-      role: "system",
-      content: "Write a report section.",
-    },
-    {
-      role: "user",
-      content: `Here is the section name: ${section.name} and description: ${section.description}`,
-    },
-  ]);
-
-  return result.content;
-});
-
-const synthesizer = task("synthesizer", async (completedSections: string[]) => {
-  // Synthesize full report from sections
-  return completedSections.join("\n\n---\n\n");
-});
-
-// Build workflow
-const workflow = entrypoint(
-  "orchestratorWorker",
-  async (topic: string) => {
-    const sections = await orchestrator(topic);
-    const completedSections = await Promise.all(
-      sections.map((section) => llmCall(section))
-    );
-    return synthesizer(completedSections);
-  }
-);
-
-// Invoke
-const stream = await workflow.stream("Create a report on LLM scaling laws", {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-}
-```
-</CodeGroup>
 
 
 ### Creating workers in LangGraph
@@ -784,7 +493,7 @@ const synthesizer: GraphNode<typeof State> = async (state) => {
 };
 
 // Conditional edge function to create llm_call workers that each write a section of the report
-const assignWorkers: ConditionalEdgeRouter<typeof State, "llmCall"> = (state) => {
+const assignWorkers: ConditionalEdgeRouter<{ InputSchema: typeof State; Nodes: "llmCall" }> = (state) => {
   // Kick off section writing in parallel via Send() API
   return state.sections.map((section) =>
     new Send("llmCall", { section })
@@ -824,8 +533,7 @@ Evaluator-optimizer workflows are commonly used when there's particular success 
 
 
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 import { StateGraph, StateSchema, GraphNode, ConditionalEdgeRouter } from "@langchain/langgraph";
 import * as z from "zod";
 
@@ -871,7 +579,7 @@ const llmCallEvaluator: GraphNode<typeof State> = async (state) => {
 };
 
 // Conditional edge function to route back to joke generator or end based upon feedback from the evaluator
-const routeJoke: ConditionalEdgeRouter<typeof State, "llmCallGenerator"> = (state) => {
+const routeJoke: ConditionalEdgeRouter<{ InputSchema: typeof State; Nodes: "llmCallGenerator" }> = (state) => {
   // Route back to joke generator or end based upon feedback from the evaluator
   if (state.funnyOrNot === "funny") {
     return "Accepted";
@@ -901,73 +609,6 @@ const optimizerWorkflow = new StateGraph(State)
 const state = await optimizerWorkflow.invoke({ topic: "Cats" });
 console.log(state.joke);
 ```
-```typescript Functional API
-import * as z from "zod";
-import { task, entrypoint } from "@langchain/langgraph";
-
-// Schema for structured output to use in evaluation
-const feedbackSchema = z.object({
-  grade: z.enum(["funny", "not funny"]).describe(
-    "Decide if the joke is funny or not."
-  ),
-  feedback: z.string().describe(
-    "If the joke is not funny, provide feedback on how to improve it."
-  ),
-});
-
-// Augment the LLM with schema for structured output
-const evaluator = llm.withStructuredOutput(feedbackSchema);
-
-// Tasks
-const llmCallGenerator = task("jokeGenerator", async (params: {
-  topic: string;
-  feedback?: z.infer<typeof feedbackSchema>;
-}) => {
-  // LLM generates a joke
-  const msg = params.feedback
-    ? await llm.invoke(
-        `Write a joke about ${params.topic} but take into account the feedback: ${params.feedback.feedback}`
-      )
-    : await llm.invoke(`Write a joke about ${params.topic}`);
-  return msg.content;
-});
-
-const llmCallEvaluator = task("jokeEvaluator", async (joke: string) => {
-  // LLM evaluates the joke
-  return evaluator.invoke(`Grade the joke ${joke}`);
-});
-
-// Build workflow
-const workflow = entrypoint(
-  "optimizerWorkflow",
-  async (topic: string) => {
-    let feedback: z.infer<typeof feedbackSchema> | undefined;
-    let joke: string;
-
-    while (true) {
-      joke = await llmCallGenerator({ topic, feedback });
-      feedback = await llmCallEvaluator(joke);
-
-      if (feedback.grade === "funny") {
-        break;
-      }
-    }
-
-    return joke;
-  }
-);
-
-// Invoke
-const stream = await workflow.stream("Cats", {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-  console.log("\n");
-}
-```
-</CodeGroup>
 
 
 ## Agents
@@ -1035,8 +676,7 @@ const toolsByName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
 const llmWithTools = llm.bindTools(tools);
 ```
 
-<CodeGroup>
-```typescript Graph API
+```typescript
 import { StateGraph, StateSchema, MessagesValue, GraphNode, ConditionalEdgeRouter } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import {
@@ -1068,7 +708,7 @@ const llmCall: GraphNode<typeof State> = async (state) => {
 const toolNode = new ToolNode(tools);
 
 // Conditional edge function to route to the tool node or end
-const shouldContinue: ConditionalEdgeRouter<typeof State, "toolNode"> = (state) => {
+const shouldContinue: ConditionalEdgeRouter<{ InputSchema: typeof State; Nodes: "toolNode" }> = (state) => {
   const messages = state.messages;
   const lastMessage = messages.at(-1);
 
@@ -1102,66 +742,6 @@ const messages = [{
 const result = await agentBuilder.invoke({ messages });
 console.log(result.messages);
 ```
-```typescript Functional API
-import { task, entrypoint, addMessages } from "@langchain/langgraph";
-import { BaseMessageLike, ToolCall } from "@langchain/core/messages";
-
-const callLlm = task("llmCall", async (messages: BaseMessageLike[]) => {
-  // LLM decides whether to call a tool or not
-  return llmWithTools.invoke([
-    {
-      role: "system",
-      content: "You are a helpful assistant tasked with performing arithmetic on a set of inputs."
-    },
-    ...messages
-  ]);
-});
-
-const callTool = task("toolCall", async (toolCall: ToolCall) => {
-  // Performs the tool call
-  const tool = toolsByName[toolCall.name];
-  return tool.invoke(toolCall.args);
-});
-
-const agent = entrypoint(
-  "agent",
-  async (messages) => {
-    let llmResponse = await callLlm(messages);
-
-    while (true) {
-      if (!llmResponse.tool_calls?.length) {
-        break;
-      }
-
-      // Execute tools
-      const toolResults = await Promise.all(
-        llmResponse.tool_calls.map((toolCall) => callTool(toolCall))
-      );
-
-      messages = addMessages(messages, [llmResponse, ...toolResults]);
-      llmResponse = await callLlm(messages);
-    }
-
-    messages = addMessages(messages, [llmResponse]);
-    return messages;
-  }
-);
-
-// Invoke
-const messages = [{
-  role: "user",
-  content: "Add 3 and 4."
-}];
-
-const stream = await agent.stream([messages], {
-  streamMode: "updates",
-});
-
-for await (const step of stream) {
-  console.log(step);
-}
-```
-</CodeGroup>
 
 
 ### ToolNode
@@ -1198,11 +778,38 @@ const calculator = tool(
 const toolNode = new ToolNode([search, calculator]);
 ```
 
+
+
+#### Access graph state and context from tools
+
+Tools executed by `ToolNode` receive the arguments generated by the model as
+their first argument. To read graph-side data that was not generated by the
+model, use one of these options:
+
+- In Python, read state and run-scoped context from the injected
+  [`ToolRuntime`](https://reference.langchain.com/javascript/langchain/index/Runtime) argument.
+- In JavaScript, read state and run-scoped context from the tool's second
+  argument, typed as [`ToolRuntime`](https://reference.langchain.com/javascript/langchain/index/Runtime).
+
+<Note>
+Tools can only access the state values passed to the `ToolNode`. When
+`ToolNode` is added directly as a `StateGraph` node, that input is the current
+graph state. If you invoke a `ToolNode` manually from another node, pass the
+full state when tools need custom state fields. For example, `tool_node.invoke(state)`
+or `toolNode.invoke(state, config)` exposes the full state, while passing only
+`{"messages": state["messages"]}` or `{ messages: state.messages }` only exposes
+`messages`.
+</Note>
+
+
+
+<WorkflowsAgentsToolRuntimeStateContextJs />
+
 ---
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/oss/langgraph/workflows-agents.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

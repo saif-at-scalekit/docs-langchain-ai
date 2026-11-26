@@ -23,7 +23,7 @@ Studio allows you to edit prompts used inside individual nodes, directly from th
 
 ### Graph configuration
 
-Define your [configuration](/oss/python/langgraph/use-graph-api#add-runtime-configuration) to specify prompt fields and their associated nodes using `langgraph_nodes` and `langgraph_type` keys.
+Define your [configuration](/oss/python/langgraph/graph-api-nodes#add-runtime-configuration) to specify prompt fields and their associated nodes using `langgraph_nodes` and `langgraph_type` keys.
 
 #### `langgraph_nodes`
 
@@ -80,10 +80,8 @@ class Configuration(BaseModel):
         Literal[
             "anthropic/claude-sonnet-4-6",
             "anthropic/claude-haiku-4-5-20251001",
-            "openai/o1",
+            "openai/gpt-6.1-sol",
             "openai/gpt-5.4-mini",
-            "openai/o1-mini",
-            "openai/o3-mini",
         ],
         {"__template_metadata__": {"kind": "llm"}},
     ] = Field(
@@ -110,7 +108,7 @@ class Configuration:
     )
 
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="anthropic/claude-3-5-sonnet-20240620",
+        default="anthropic/claude-sonnet-4-6",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
             "Should be in the form: provider/model-name.",
@@ -152,16 +150,11 @@ Before running an experiment, ensure you have the following:
 - **A LangSmith dataset**: Your dataset should contain the inputs you want to test and optionally, reference outputs for comparison. The schema for the inputs must match the required input schema for the assistant. For more information on schemas, see the [graph API schema documentation](/oss/python/langgraph/graph-api#schema). For more on creating datasets, refer to [How to Manage Datasets](/langsmith/manage-datasets-in-application#create-a-dataset-and-add-examples).
 - **(Optional) Evaluators**: You can attach evaluators (e.g., LLM-as-a-Judge, heuristics, or custom functions) to your dataset in LangSmith. These will run automatically after the graph has processed all inputs.
 - **A running application**: The experiment can be run against:
-  - An application deployed on [LangSmith](/langsmith/deployment).
+  - An application [deployed on LangSmith](/langsmith/deploy-overview).
   - A locally running application started via the [langgraph-cli](/langsmith/local-dev-testing).
 
 <Note>
-Studio experiments follow the same [data retention](/langsmith/administration-overview#data-retention) rules as other experiments. By default, traces have base tier retention (14 days). However, traces will automatically upgrade to extended tier retention (400 days) if feedback is added to them. Feedback can be added in one of two ways:
-
-- The [dataset has evaluators configured](/langsmith/bind-evaluator-to-dataset).
-- [Feedback](/langsmith/observability-concepts#feedback) is manually added to a trace.
-
-This auto-upgrade increases both the retention period and the cost of the trace. For more details, refer to [Data retention auto-upgrades](/langsmith/administration-overview#how-it-works).
+Studio experiments follow the same [data retention](/langsmith/usage-and-billing#data-retention) rules as other experiments: runs are created at extended retention by default. If the workspace [disables extended trace retention](/langsmith/data-purging-compliance#disable-extended-trace-retention), experiment runs use base retention. For more details, refer to [How retention affects downstream features](/langsmith/usage-and-billing#how-retention-affects-downstream-features).
 </Note>
 
 ### Experiment setup
@@ -225,7 +218,7 @@ For more details, refer to [How to evaluate an application's intermediate steps]
 
 <div className="source-links">
 <Callout icon="terminal-2">
-    [Connect these docs](/use-these-docs) to Claude, VSCode, and more via MCP for real-time answers.
+    [Connect these docs](/use-these-docs) to your agent of choice via MCP for real-time answers.
 </Callout>
 <Callout icon="edit">
     [Edit this page on GitHub](https://github.com/langchain-ai/docs/edit/main/src/langsmith/observability-studio.mdx) or [file an issue](https://github.com/langchain-ai/docs/issues/new/choose).

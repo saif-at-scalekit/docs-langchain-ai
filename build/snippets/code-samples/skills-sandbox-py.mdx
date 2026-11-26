@@ -4,15 +4,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -21,9 +21,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -35,11 +38,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -61,9 +63,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -77,15 +79,15 @@
     
         try:
             agent = create_deep_agent(
-                model="google_genai:gemini-3.1-pro-preview",
+                model="google_genai:gemini-4-hydrogen",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -97,15 +99,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -114,9 +116,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -128,11 +133,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -154,9 +158,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -170,15 +174,15 @@
     
         try:
             agent = create_deep_agent(
-                model="openai:gpt-5.4",
+                model="openai:gpt-6.1-sol",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -190,15 +194,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -207,9 +211,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -221,11 +228,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -247,9 +253,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -263,15 +269,15 @@
     
         try:
             agent = create_deep_agent(
-                model="anthropic:claude-sonnet-4-6",
+                model="anthropic:claude-sonnet-5",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -283,15 +289,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -300,9 +306,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -314,11 +323,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -340,9 +348,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -356,15 +364,15 @@
     
         try:
             agent = create_deep_agent(
-                model="openrouter:anthropic/claude-sonnet-4-6",
+                model="openrouter:z-ai/glm-5.2",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -376,15 +384,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -393,9 +401,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -407,11 +418,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -433,9 +443,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -449,15 +459,15 @@
     
         try:
             agent = create_deep_agent(
-                model="fireworks:accounts/fireworks/models/qwen3p5-397b-a17b",
+                model="fireworks:accounts/fireworks/models/glm-5p2",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -469,15 +479,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -486,9 +496,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -500,11 +513,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -526,9 +538,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -542,15 +554,15 @@
     
         try:
             agent = create_deep_agent(
-                model="baseten:zai-org/GLM-5",
+                model="baseten:zai-org/GLM-5.2",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
@@ -562,15 +574,15 @@
     from pathlib import Path
     from typing import Any
     
-    from daytona import Daytona
     from deepagents import create_deep_agent
     from deepagents.backends import CompositeBackend, StoreBackend
+    from deepagents.backends.langsmith import LangSmithSandbox
     from deepagents.backends.utils import create_file_data
     from langchain.agents.middleware import AgentMiddleware, AgentState
     
-    from langchain_daytona import DaytonaSandbox
     from langgraph.runtime import Runtime
     from langgraph.store.memory import InMemoryStore
+    from langsmith.sandbox import SandboxClient
     
     # Identical skill bundles for every user: one shared store namespace.
     SKILLS_SHARED_NAMESPACE = ("skills", "builtin")
@@ -579,9 +591,12 @@
     class SkillSandboxSyncMiddleware(AgentMiddleware[AgentState, Any, Any]):
         """Copy shared skill files from the store into the sandbox before each agent run."""
     
-        def __init__(self, backend: CompositeBackend) -> None:
+        def __init__(self, sandbox: LangSmithSandbox) -> None:
             super().__init__()
-            self.backend = backend
+            # Call the sandbox directly. CompositeBackend routes /skills/ to
+            # StoreBackend, so aupload_files on the composite would write back to
+            # the store instead of seeding the container for script execution.
+            self.sandbox = sandbox
     
         async def abefore_agent(self, state: AgentState, runtime: Runtime[Any]) -> None:
             store = runtime.store
@@ -593,11 +608,10 @@
                     msg = f"Invalid key: {key}"
                     raise ValueError(msg)
                 normalized = key if key.startswith("/") else f"/{key}"
-                # CompositeBackend routes paths and batches uploads to the right backend.
                 files.append((f"/skills{normalized}", item.value["content"].encode()))
     
             if files:
-                await self.backend.aupload_files(files)
+                await self.sandbox.aupload_files(files)
     
     
     async def seed_skill_store(store: InMemoryStore) -> None:
@@ -619,9 +633,9 @@
         store = InMemoryStore()
         await seed_skill_store(store)
     
-        daytona = Daytona()
-        sandbox = daytona.create()
-        sandbox_backend = DaytonaSandbox(sandbox=sandbox)
+        client = SandboxClient()
+        ls_sandbox = client.create_sandbox()
+        sandbox_backend = LangSmithSandbox(sandbox=ls_sandbox)
     
         backend = CompositeBackend(
             default=sandbox_backend,
@@ -635,18 +649,22 @@
     
         try:
             agent = create_deep_agent(
-                model="ollama:devstral-2",
+                model="ollama:north-mini-code-1.0",
                 backend=backend,
                 skills=["/skills/"],
                 store=store,
-                middleware=[SkillSandboxSyncMiddleware(backend)],
+                middleware=[SkillSandboxSyncMiddleware(sandbox_backend)],
             )
     
         finally:
-            sandbox.stop()
+            client.delete_sandbox(ls_sandbox.name)
     
     
     if __name__ == "__main__":
         asyncio.run(main())
     ```
 </CodeGroup>
+
+<Card title="View example trace" icon="chart-line" href="https://smith.langchain.com/public/0052c946-fa0d-437b-ab76-6be7f4f5e557/r" arrow horizontal>
+  Open a public LangSmith run for this example.
+</Card>
